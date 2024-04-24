@@ -22,4 +22,25 @@ subject_totals = df[['math', 'science', 'english']].apply(lambda col: col.sum(),
 # calculate math, science & english total scores seperately
 # output is panda series, each index represents a column
 
+# nest with if
+df['parsed_column_1'] = df['column_1'].apply(
+    lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+)
+
+
+# python parse json files
+
+# ast (Abstract Syntax Tree)
+ast.literal_eval(x) # convert string to python object, only interprets literals (lists, dicts, tuples etc), safer
+data_str = "[1, 2, 3]"
+parsed_data = ast.literal_eval(data_str)
+
+ast.eval(x) # convert string to python object, interprets complex expressions, unsafe ()
+data_str = "1 + 2 + 3"
+parsed_data = ast.eval(data_str)
+
+
+# python datetime
+
+
 # python .map()
