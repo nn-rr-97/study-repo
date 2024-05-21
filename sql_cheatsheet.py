@@ -9,30 +9,55 @@
 # When you create a relationship, it enforces rules that ensure consistency between related records in the tables.
 
 
-# INSERT
-INSERT INTO table_name (column1, column2, column3, ...)
+# INSERT - with specific values
+f'INSERT INTO table_name (column1, column2, column3, ...)
 VALUES (value1, value2, value3, ...);
+'
+#INSERT - with multiple specific values
+f'INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...), (value1, value2, ...), ...;
+'
 
-INSERT INTO table_name
+# INSERT - with values from another table
+f'INSERT INTO table_name
 SELECT column1, column2, column3, ...
 FROM another_table_name
-WHERE condition;
+WHERE condition;'
+
+# INSERT - with no duplicates
+f"INSERT INTO table_B (column1, column2, ...)
+SELECT column1, column2, ...
+FROM table_A
+WHERE table_A.unique_key NOT IN (SELECT unique_key FROM table_B);"
+
+
+f"INSERT INTO table_B (column1, column2, ...)
+SELECT column1, column2, ...
+FROM table_A
+WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);"
+
+f"INSERT INTO table_B (column1, column2, ...)
+SELECT DISTINCT column1, column2, ...
+FROM table_A
+WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);
+"
 
 # update
-UPDATE Customers
+f"UPDATE Customers
 SET ContactName = 'Alfred Schmidt', City = 'Frankfurt'
-WHERE CustomerID = 1;
+WHERE CustomerID = 1;"
+
 
 # delete
-DELETE FROM table_name
-WHERE condition;
+f'DELETE FROM table_name
+WHERE condition;'
 
 
 
 # cross join - cartesian product of two or more tables, match each row of one table to every other row of another table
 # when using with WHERE clause, it acts as INNER JOIN
-SELECT * FROM table1
-CROSS JOIN table2;
+f'SELECT * FROM table1
+CROSS JOIN table2;'
 
 
 
