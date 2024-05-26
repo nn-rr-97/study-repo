@@ -278,3 +278,159 @@ HAVING SUM(sales_amount) > 10000
 ORDER BY total_sales DESC
 LIMIT 10;'
 
+# Ranking
+# ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
+# RANK() - assigns a unique integer to each distinct row within the partition of a result set
+# DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
+# NTILE() - divides an ordered set of rows into a specified number of approximately equal groups
+# LAG() - accesses data from a previous row in the same result set without the use of a self-join
+
+# ROW_NUMBER()
+f'SELECT product_category, sales_amount,
+       ROW_NUMBER() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
+  FROM sales;'
+# RANK()
+f'SELECT product_category, sales_amount,
+       RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
+  FROM sales;'
+# DENSE_RANK()
+f'SELECT product_category, sales_amount,
+       DENSE_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
+  FROM sales;'
+# NTILE()
+f'SELECT product_category, sales_amount,
+       NTILE(4) OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS quartile
+  FROM sales;'
+# LAG()
+f'SELECT product_category, sales_amount,
+       LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
+  FROM sales;'
+# LEAD()
+f'SELECT product_category, sales_amount,
+       LEAD(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS next_sales_amount
+  FROM sales;'
+# FIRST_VALUE()
+f'SELECT product_category, sales_amount,
+       FIRST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS first_sales_amount
+  FROM sales;'
+# LAST_VALUE()
+f'SELECT product_category, sales_amount,
+       LAST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS last_sales_amount
+  FROM sales;'
+# PERCENT_RANK()
+f'SELECT product_category, sales_amount,
+       PERCENT_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount) AS percent_rank
+  FROM sales;'
+# CUME_DIST()
+f'SELECT product_category, sales_amount,
+       CUME_DIST() OVER (PARTITION BY product_category ORDER BY sales_amount) AS cume_dist
+  FROM sales;'
+# PERCENTILE_CONT()
+f'SELECT product_category, sales_amount,
+       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
+  FROM sales;'
+# PERCENTILE_DISC()
+f'SELECT product_category, sales_amount,
+       PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
+  FROM sales;'
+
+# round
+f'SELECT product_name, ROUND(price, 2) AS rounded_price
+FROM products;'
+
+# cast - convert one data type to another
+f'SELECT product_name, CAST(price AS INT) AS price_int'
+f'SELECT product_name, CAST(price AS DECIMAL(10,2)) AS price_decimal'
+
+# handle dates
+# DATE - format: 'YYYY-MM-DD'
+# TIME - format: 'HH:MM:SS'
+# TIMESTAMP - format: 'YYYY-MM-DD HH:MM:SS'
+# EXTRACT() - extracts parts of a date or time value
+# DATE_PART() - extracts parts of a date or time value
+# TO_CHAR() - converts a date or time value to a string
+# TO_DATE() - converts a string to a date or time value
+# INTERVAL - represents a period of time
+# CURRENT_DATE - returns the current date
+# CURRENT_TIME - returns the current time
+# CURRENT_TIMESTAMP - returns the current date and time
+# NOW() - returns the current date and time
+# DATE_ADD() - adds a specified time interval to a date or time value
+# DATE_SUB() - subtracts a specified time interval from a date or time value
+# DATE_DIFF() - calculates the difference between two date or time values
+# DATE_TRUNC() - truncates a date or time value to a specified level of precision
+# DATE_PART() - extracts parts of a date or time value
+# DATE_FORMAT() - formats a date or time value
+# STR_TO_DATE() - converts a string to a date or time value
+# TIMESTAMPDIFF() - calculates the difference between two date or time values
+# TIMESTAMPADD() - adds a specified time interval to a date or time value
+# TIMESTAMPDIFF() - calculates the difference between two date or time values
+# TIMESTAMPADD() - adds a specified time interval to a date or time value
+
+# EXTRACT()
+f'SELECT product_name, EXTRACT(YEAR FROM sales_date) AS sales_year
+
+# DATE_PART()
+f'SELECT product_name, DATE_PART('year', sales_date) AS sales_year
+
+# TO_CHAR()
+f'SELECT product_name, TO_CHAR(sales_date, 'YYYY-MM-DD') AS formatted_sales_date
+
+# TO_DATE()
+f'SELECT product_name, TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date
+
+# INTERVAL
+f'SELECT product_name, sales_date + INTERVAL '1' DAY AS next_day'
+
+# CURRENT_DATE
+f'SELECT product_name, CURRENT_DATE AS current_date'
+
+# CURRENT_TIME
+f'SELECT product_name, CURRENT_TIME AS current_time'
+
+# CURRENT_TIMESTAMP
+f'SELECT product_name, CURRENT_TIMESTAMP AS current_timestamp'
+
+# NOW()
+f'SELECT product_name, NOW() AS current_date_time'
+
+# DATE_ADD()
+f'SELECT product_name, DATE_ADD(sales_date, INTERVAL 1 DAY) AS next_day'
+
+# DATE_SUB()
+f'SELECT product_name, DATE_SUB(sales_date, INTERVAL 1 DAY) AS previous_day'
+
+# DATE_DIFF()
+f'SELECT product_name, DATE_DIFF('2024-01-01', sales_date) AS days_since_sale'
+
+# DATE_TRUNC()
+f'SELECT product_name, DATE_TRUNC('month', sales_date) AS first_day_of_month'
+
+# DATE_PART()
+f'SELECT product_name, DATE_PART('year', sales_date) AS sales_year'
+
+# DATE_FORMAT()
+f'SELECT product_name, DATE_FORMAT(sales_date, 'YYYY-MM-DD') AS formatted_sales_date'
+
+# STR_TO_DATE()
+f'SELECT product_name, STR_TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date'
+
+# TIMESTAMPDIFF()
+f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
+
+# TIMESTAMPADD()
+f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
+
+# TIMESTAMPDIFF()
+f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
+
+# TIMESTAMPADD()
+f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
+
+# -----------------Subquery-----------------
+# Subquery - query within another query
+# Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
+f'SELECT column_name(s) 
+FROM table_name 
+WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);'
+
