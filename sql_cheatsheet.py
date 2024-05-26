@@ -146,7 +146,7 @@ f'DELETE FROM table_name
 WHERE condition;'
 
 # ----------------JOIN----------------
-# INNER JOIN - returns rows when there is at least one match in both tables
+# INNER JOIN - returns rows when there is at least one match in both tables (From..Join,,)
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
@@ -340,7 +340,8 @@ FROM products;'
 
 # cast - convert one data type to another
 f'SELECT product_name, CAST(price AS INT) AS price_int'
-f'SELECT product_name, CAST(price AS DECIMAL(10,2)) AS price_decimal'
+f'SELECT product_name, CAST(price AS DECIMAL(10,2)) AS price_decimal' # decimal with 10 digits and 2 decimal places, DECIMAL(precision, scale)
+
 
 # handle dates
 # DATE - format: 'YYYY-MM-DD'
@@ -430,7 +431,50 @@ f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
 # -----------------Subquery-----------------
 # Subquery - query within another query
 # Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
+# Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
+
+# single value subquery
+f'SELECT column_name(s)
+FROM table_name
+WHERE column_name = (SELECT column_name FROM table_name WHERE condition);'
+
+# multiple value subquery
 f'SELECT column_name(s) 
 FROM table_name 
 WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);'
+
+# common table expression (CTE) - temporary result set that can be referenced within a SELECT, INSERT, UPDATE, or DELETE statement
+f'WITH cte_name AS ('
+f'  SELECT column_name(s)'
+f'  FROM table_name'
+f'  WHERE condition'
+f')'
+f'SELECT column_name(s)'
+f'FROM cte_name;'
+# multiple CTEs
+f'WITH cte1 AS ('
+f'  SELECT column_name(s)'
+f'  FROM table_name'
+f'  WHERE condition'
+f'),'
+f'cte2 AS ('
+f'  SELECT column_name(s)'
+f'  FROM cte1'
+f'  WHERE condition'
+f')'
+f'SELECT column_name(s)'
+f'FROM cte2;'
+# recursive CTE
+f'WITH RECURSIVE cte_name AS ('
+f'  SELECT column_name(s)'
+f'  FROM table_name'
+f'  WHERE condition'
+f'UNION ALL'
+f'  SELECT column_name(s)'
+f'  FROM cte_name'
+f'  WHERE condition'
+f')'
+f'SELECT column_name(s)'
+f'FROM cte_name;'
+#
 
