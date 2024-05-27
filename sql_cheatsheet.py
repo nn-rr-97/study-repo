@@ -1,10 +1,31 @@
-# handling NULL??
+# case sensitive
+# keywords and commands are case-insensitive
+# data and operators can be case-sensitive
+f'SELECT * FROM users WHERE username LIKE 'alice';' # case-sensitive or not depends on the collation of the database
+f'SELECT * FROM users WHERE BINARY username LIKE 'alice';' # case-sensitive
+
+# Handling NUll
+
+#IFNULL(expression, replacement)- return an alternative value if an expression is NULL
+f'''SELECT ProductName, UnitPrice * (UnitsInStock + IFNULL(UnitsOnOrder, 0))
+FROM Products;'''
+
+#NVL(expression, replacement) - Replaces a NULL value with a specified replacement value (support in Oracle)
+f'SELECT NVL(column_name, 'default_value') FROM table_name;' # Replaces NULL values in a column with a specified value.
+
+#COALESCE(expression1, expression2, ..., expressionN) - returns the first non-NULL expression among its arguments
+f'SELECT COALESCE(column1, column2, 'default_value') FROM table_name;' # Returns the first non-NULL expression from a list of expressions.
+
+
+#NULLIF(expression1, expression2) - Returns NULL if expression1 equals expression2; otherwise, it returns expression1
+f'SELECT NULLIF(column1, column2) FROM table_name;' #If column1 equals column2, the result is NULL. Otherwise, it returns the value of column1.
+
 
 # primary key
-# specific choice of a minimal set of attributes (columns) that uniquely specify a tuple (row) in a relation (table).
+# unique identifier for each table row
 
 # foreign key
-# foreign key is a field in a table that is primary key in another table        
+#  a key used to link two tables together, it is a field in a table that refers to the PRIMARY KEY in another table    
 
 # build relationship between tables
 # The primary purpose of establishing relationships (such as foreign key relationships) is to maintain data integrity.
@@ -15,11 +36,15 @@
 # the WHERE clause filters individual tuples before they are grouped via GROUP BY
 #the HAVING clause filters whole groups after they have been formed with GROUP BY
 
-f'  SELECT <result_list>
-    FROM <relation(s)>
-   WHERE <per_tuple_condition>
-GROUP BY <list_of_attributes>
-  HAVING <per_group_condition>'
+# orders
+f'''SELECT product_category, SUM(sales_amount) AS total_sales
+FROM sales
+WHERE sales_date > '2024-01-01'
+GROUP BY product_category
+HAVING SUM(sales_amount) > 10000
+ORDER BY total_sales DESC
+LIMIT 10;'''
+
 
 # not equal
 <> or !=
@@ -73,35 +98,56 @@ f'SELECT uosCode, uosName
 # Aggregate functions like SUM(), AVG(), COUNT(), MIN(), MAX() often require GROUP BY to specify the grouping columns.
 # all columns in the SELECT statement that are not used within an aggregate function must be included in the GROUP BY clause.
 
-# CASE - to create a new column based on a condition
-f'SELECT uosCode, uosName,
-       CASE
-         WHEN uosCreditPoints > 6 THEN 'Advanced'
-         ELSE 'Basic'
-       END AS uosLevel
-  FROM UnitOfStudy;'
+# conditional data aggregation
+
+# filter - straifhtforward condition
+f'SUM(amount) FILTER (WHERE condition)' # sum of amount where condition is met
+
+f'''SELECT
+    product_id,
+    SUM(amount) AS total_sales_amount,
+    SUM(amount) FILTER (WHERE sale_date > '2024-01-01') AS sales_amount_after_january
+FROM
+    sales
+GROUP BY
+    product_id;
+'''
+
+
+# CASE - to create a new column based on a condition, more complex conditional logic
+
+f'''SELECT
+    product_id,
+    SUM(amount) AS total_sales_amount,
+    SUM(CASE WHEN sale_date > '2024-01-01' THEN amount ELSE 0 END) AS sales_amount_after_january
+FROM
+    sales
+GROUP BY
+    product_id;
+'''
+
 
 # CASE - multiple conditions
-f'SELECT uosCode, uosName,
-       CASE
-         WHEN uosCreditPoints > 6 THEN 'Advanced'
-         WHEN uosCreditPoints > 3 THEN 'Intermediate'
-         ELSE 'Basic'
-       END AS uosLevel
-  FROM UnitOfStudy;'
+f'''SUM(CASE WHEN condition1 THEN value1
+         WHEN condition2 THEN value2
+         ELSE 0 END)
+'''
 
 # CASE - with aggregate functions
-f'SELECT uosCode, uosName,
-       COUNT(*) AS numStudents,
-       CASE
-         WHEN COUNT(*) > 100 THEN 'Large'
-         ELSE 'Small'
-       END AS classSize
+f'''SELECT uosCode, uosName, COUNT(*) AS numStudents,
+       CASE WHEN COUNT(*) > 100 THEN 'Large' ELSE 'Small' END AS classSize
   FROM Enrolment
- GROUP BY uosCode, uosName;'
+ GROUP BY uosCode, uosName;'''
 
 
+# select into - create a new table from an existing table
+# copies only the German customers into a new table
+f'''SELECT * INTO CustomersGermany
+FROM Customers
+WHERE Country = 'Germany';'''
 
+
+# insert into - add new rows to a table
 # INSERT - with specific values
 f'INSERT INTO table_name (column1, column2, column3, ...)
 VALUES (value1, value2, value3, ...);
@@ -151,12 +197,14 @@ f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name;'
+
 # INNER JOIN - with multiple conditions
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name1 = table2.column_name1
 AND table1.column_name2 = table2.column_name2;'
+
 # INNER JOIN - with multiple tables
 f'SELECT column_name(s)
 FROM table1
@@ -164,24 +212,28 @@ INNER JOIN table2
 ON table1.column_name = table2.column_name
 INNER JOIN table3
 ON table1.column_name = table3.column_name;'
+
 # INNER JOIN - with WHERE clause
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
 WHERE condition;'
+
 # INNER JOIN - with GROUP BY
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
 GROUP BY column_name;'
+
 # INNER JOIN - with ORDER BY
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
 ORDER BY column_name;'
+
 # INNER JOIN - with LIMIT
 f'SELECT column_name(s)
 FROM table1
@@ -200,16 +252,17 @@ f'SELECT column_name(s)
 FROM table1
 RIGHT JOIN table2
 ON table1.column_name = table2.column_name;'
+
 # FULL JOIN (or FULL OUTER JOIN) - returns rows when there is a match in one of the tables
 f'SELECT column_name(s)
 FROM table1
 FULL JOIN table2
 ON table1.column_name = table2.column_name;'
+
 # SELF JOIN - join a table to itself
 f'SELECT column_name(s)
 FROM table1 T1, table1 T2
 WHERE condition;'
-
 
 # cross join - cartesian product of two or more tables, match each row of one table to every other row of another table
 # when using with WHERE clause, it acts as INNER JOIN
@@ -268,15 +321,46 @@ SELECT column1, column2
 FROM table_name
 FETCH NEXT 5 ROWS ONLY;'
 
+# UNION - combine the result set of two or more SELECT statements
+# UNION - removes duplicate rows
+f'SELECT column_name(s)
+FROM table1
+UNION
+SELECT column_name(s)
+FROM table2;'
 
-# orders
-f'SELECT product_category, SUM(sales_amount) AS total_sales
-FROM sales
-WHERE sales_date > '2024-01-01'
-GROUP BY product_category
-HAVING SUM(sales_amount) > 10000
-ORDER BY total_sales DESC
-LIMIT 10;'
+# UNION ALL - does not remove duplicate rows
+f'SELECT column_name(s)
+FROM table1
+UNION ALL
+SELECT column_name(s)
+FROM table2;'
+
+# EXISTS - to check for the existence of rows in a subquery, returns TRUE if the subquery returns one or more rows
+f'''SELECT SupplierName
+FROM Suppliers
+WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price < 20); # returns TRUE and lists the suppliers with a product price less than 20
+'''
+
+# NOT EXISTS - to check for the non-existence of rows in a subquery, returns TRUE if the subquery returns no rows
+
+# ANY - to compare a value to any value in a list or returned by a subquery
+# finds ANY records in the OrderDetails table has Quantity equal to 10
+f'''SELECT ProductName
+FROM Products
+WHERE ProductID = ANY
+  (SELECT ProductID
+  FROM OrderDetails
+  WHERE Quantity = 10);'''
+
+# ALL - to compare a value to every value in a list or returned by a subquery
+# lists the ProductName if ALL the records in the OrderDetails table has Quantity equal to 10, otherwise return false
+f'''SELECT ProductName
+FROM Products
+WHERE ProductID = ALL
+  (SELECT ProductID
+  FROM OrderDetails
+  WHERE Quantity = 10);'''
 
 # Ranking
 # ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
