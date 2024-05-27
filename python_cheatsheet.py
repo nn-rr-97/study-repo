@@ -42,5 +42,15 @@ parsed_data = ast.eval(data_str)
 
 # python datetime
 
+# compare two dates
+
+tend = datetime.datetime(2024, 5, 17)
+
+while tend.date() > datetime.datetime(2024, 5, 1): # note compare date() with datetime object
+    tend -= datetime.timedelta(days=1)
+
+    tstart = tend - datetime.timedelta(days=1)
+
+
 
 # python .map()
