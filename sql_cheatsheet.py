@@ -4,6 +4,12 @@
 f'SELECT * FROM users WHERE username LIKE 'alice';' # case-sensitive or not depends on the collation of the database
 f'SELECT * FROM users WHERE BINARY username LIKE 'alice';' # case-sensitive
 
+# limit - limit the number of rows returned by a query
+f'SELECT * FROM table_name LIMIT 5;' # returns the first 5 rows from the table
+
+# offset - skip a specified number of rows before returning the result set
+f'SELECT * FROM table_name LIMIT 5 OFFSET 5;' # returns rows 6 to 10
+
 # Handling NUll
 
 #IFNULL(expression, replacement)- return an alternative value if an expression is NULL
@@ -254,6 +260,7 @@ RIGHT JOIN table2
 ON table1.column_name = table2.column_name;'
 
 # FULL JOIN (or FULL OUTER JOIN) - returns rows when there is a match in one of the tables
+# use it when you want to return all rows from both tables
 f'SELECT column_name(s)
 FROM table1
 FULL JOIN table2
@@ -269,12 +276,12 @@ WHERE condition;'
 f'SELECT * FROM table1
 CROSS JOIN table2;'
 
-
 # Create view
 f'CREATE VIEW view_name AS
 SELECT column1, column2, ...
 FROM table_name
 WHERE condition;'
+
 # view can be used like a table
 f'SELECT * FROM view_name;'
 # drop view
@@ -362,61 +369,78 @@ WHERE ProductID = ALL
   FROM OrderDetails
   WHERE Quantity = 10);'''
 
-# Ranking
-# ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
-# RANK() - assigns a unique integer to each distinct row within the partition of a result set
-# DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
-# NTILE() - divides an ordered set of rows into a specified number of approximately equal groups
-# LAG() - accesses data from a previous row in the same result set without the use of a self-join
+# Window Functions
 
-# ROW_NUMBER()
+# ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
 f'SELECT product_category, sales_amount,
        ROW_NUMBER() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
-# RANK()
+
+# # RANK() - assigns a unique integer to each distinct row within the partition of a result set, skipping the next integer if there is a tie
 f'SELECT product_category, sales_amount,
        RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
-# DENSE_RANK()
+
+# DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
 f'SELECT product_category, sales_amount,
        DENSE_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
-# NTILE()
+
+# NTILE() - divides an ordered set of rows into a specified number of approximately equal groups
 f'SELECT product_category, sales_amount,
        NTILE(4) OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS quartile
   FROM sales;'
-# LAG()
+
+# LAG(amount,1) - accesses data from a previous row in the same result set without the use of a self-join
 f'SELECT product_category, sales_amount,
        LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
   FROM sales;'
-# LEAD()
+
+# LEAD() - accesses data from a subsequent row in the same result set without the use of a self-join
 f'SELECT product_category, sales_amount,
        LEAD(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS next_sales_amount
   FROM sales;'
-# FIRST_VALUE()
+
+# FIRST_VALUE() - returns the first value in an ordered set of values
 f'SELECT product_category, sales_amount,
        FIRST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS first_sales_amount
   FROM sales;'
-# LAST_VALUE()
+
+# LAST_VALUE() - returns the last value in an ordered set of values
 f'SELECT product_category, sales_amount,
        LAST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS last_sales_amount
   FROM sales;'
-# PERCENT_RANK()
+
+# PERCENT_RANK() - calculates the relative rank of a value in a group of values, e.g. 0.33 means the value is greater than 33% of the values in the group
 f'SELECT product_category, sales_amount,
        PERCENT_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount) AS percent_rank
   FROM sales;'
-# CUME_DIST()
+
+# CUME_DIST() - calculates the cumulative distribution of a value in a group of values, It represents the proportion of rows with values less than or equal to the current row's value
 f'SELECT product_category, sales_amount,
        CUME_DIST() OVER (PARTITION BY product_category ORDER BY sales_amount) AS cume_dist
   FROM sales;'
-# PERCENTILE_CONT()
+
+# PERCENTILE_CONT() - calculates the value that corresponds to a specified percentile in a group of values
 f'SELECT product_category, sales_amount,
        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;'
-# PERCENTILE_DISC()
+
+# PERCENTILE_DISC() - calculates the value that corresponds to a specified percentile in a group of values
 f'SELECT product_category, sales_amount,
        PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;'
+
+# aggregate functions with window functions - get running aggregates
+f'SELECT product_category, sales_amount,
+       SUM(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_date) AS running_total
+  FROM sales;' # running total of sales_amount within each product_category
+
+# avg - moving average of a specified number of previous rows.
+# count - cumulative count of rows up to the current row.
+# max - maximum value of a specified number of previous rows.
+# min - minimum value of a specified number of previous rows.
+
 
 # round
 f'SELECT product_name, ROUND(price, 2) AS rounded_price
@@ -431,91 +455,82 @@ f'SELECT product_name, CAST(price AS DECIMAL(10,2)) AS price_decimal' # decimal 
 # DATE - format: 'YYYY-MM-DD'
 # TIME - format: 'HH:MM:SS'
 # TIMESTAMP - format: 'YYYY-MM-DD HH:MM:SS'
-# EXTRACT() - extracts parts of a date or time value
-# DATE_PART() - extracts parts of a date or time value
-# TO_CHAR() - converts a date or time value to a string
-# TO_DATE() - converts a string to a date or time value
-# INTERVAL - represents a period of time
-# CURRENT_DATE - returns the current date
-# CURRENT_TIME - returns the current time
-# CURRENT_TIMESTAMP - returns the current date and time
-# NOW() - returns the current date and time
-# DATE_ADD() - adds a specified time interval to a date or time value
-# DATE_SUB() - subtracts a specified time interval from a date or time value
-# DATE_DIFF() - calculates the difference between two date or time values
-# DATE_TRUNC() - truncates a date or time value to a specified level of precision
-# DATE_PART() - extracts parts of a date or time value
-# DATE_FORMAT() - formats a date or time value
-# STR_TO_DATE() - converts a string to a date or time value
-# TIMESTAMPDIFF() - calculates the difference between two date or time values
-# TIMESTAMPADD() - adds a specified time interval to a date or time value
-# TIMESTAMPDIFF() - calculates the difference between two date or time values
-# TIMESTAMPADD() - adds a specified time interval to a date or time value
 
-# EXTRACT()
+# EXTRACT() - extracts parts of a date or time value
+# year, month, day, hour, minute, second, week, quarter
 f'SELECT product_name, EXTRACT(YEAR FROM sales_date) AS sales_year
 
-# DATE_PART()
+# DATE_PART() - extracts parts of a date or time value
+# year, month, day, hour, minute, second, week, quarter
 f'SELECT product_name, DATE_PART('year', sales_date) AS sales_year
 
-# TO_CHAR()
+# TO_CHAR() - converts a date or time value to a string
 f'SELECT product_name, TO_CHAR(sales_date, 'YYYY-MM-DD') AS formatted_sales_date
 
-# TO_DATE()
+# TO_DATE() - converts a string to a date or time value
 f'SELECT product_name, TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date
 
-# INTERVAL
-f'SELECT product_name, sales_date + INTERVAL '1' DAY AS next_day'
+# INTERVAL - represents a period of time
+f'SELECT DATE_ADD('2024-05-27', INTERVAL 1 MONTH) AS new_date;' # get 2024-06-27
+f'SELECT DATE_SUB('2024-05-27 10:00:00', INTERVAL 2 HOUR) AS new_datetime;' # get 2024-05-27 08:00:00
 
-# CURRENT_DATE
+# CURRENT_DATE - returns the current date
 f'SELECT product_name, CURRENT_DATE AS current_date'
 
-# CURRENT_TIME
+# CURRENT_TIME - returns the current time
 f'SELECT product_name, CURRENT_TIME AS current_time'
 
-# CURRENT_TIMESTAMP
+# CURRENT_TIMESTAMP - returns the current date and time
 f'SELECT product_name, CURRENT_TIMESTAMP AS current_timestamp'
 
-# NOW()
+# NOW() - returns the current date and time
 f'SELECT product_name, NOW() AS current_date_time'
 
-# DATE_ADD()
+# DATE_ADD() - adds a specified time interval to a date or time value
 f'SELECT product_name, DATE_ADD(sales_date, INTERVAL 1 DAY) AS next_day'
+f'SELECT DATEADD(month, 1, '2024-05-27') AS new_date;' # get 2024-06-27
+f'SELECT DATEADD(hour, -2, '2024-05-27 10:00:00') AS new_datetime;' # get 2024-05-27 08:00:00
 
-# DATE_SUB()
-f'SELECT product_name, DATE_SUB(sales_date, INTERVAL 1 DAY) AS previous_day'
 
-# DATE_DIFF()
+# DATE_DIFF() - calculates the difference between two date or time values
 f'SELECT product_name, DATE_DIFF('2024-01-01', sales_date) AS days_since_sale'
 
-# DATE_TRUNC()
+# DATE_TRUNC() - truncates a date or time value to a specified level of precision
 f'SELECT product_name, DATE_TRUNC('month', sales_date) AS first_day_of_month'
 
-# DATE_PART()
-f'SELECT product_name, DATE_PART('year', sales_date) AS sales_year'
+f'''SELECT DATE_TRUNC('month', '2024-05-27 10:15:30'::timestamp) AS truncated_date;''' # get 2024-05-01 00:00:00, truncate the timestamp '2024-05-27 10:15:30' to the start of the month
 
-# DATE_FORMAT()
+# DATE_FORMAT() - formats a date or time value
 f'SELECT product_name, DATE_FORMAT(sales_date, 'YYYY-MM-DD') AS formatted_sales_date'
+f'SELECT DATE_FORMAT('2024-05-27 10:15:30', '%Y-%m-%d %H:%i:%s') AS formatted_date;' # get 2024-05-27 10:15:30
 
-# STR_TO_DATE()
+# STR_TO_DATE() - converts a string to a date or time value using a specified format
 f'SELECT product_name, STR_TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date'
 
-# TIMESTAMPDIFF()
+# TIMESTAMPDIFF() - calculates the difference between two date or time values
 f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
 
-# TIMESTAMPADD()
+
+# TIMESTAMPADD() - adds a specified time interval to a date or time value
 f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
 
-# TIMESTAMPDIFF()
+# TIMESTAMPDIFF() - calculates the difference between two date or time values
 f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
 
-# TIMESTAMPADD()
-f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
 
 # -----------------Subquery-----------------
 # Subquery - query within another query
 # Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
 # Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
+
+# create new table for outer query
+f'SELECT employee_id, total_sales
+FROM (
+    SELECT employee_id, SUM(sale_amount) AS total_sales
+    FROM sales
+    GROUP BY employee_id
+) AS SalesSubquery
+WHERE total_sales > 10000;'
 
 # single value subquery
 f'SELECT column_name(s)
@@ -535,6 +550,7 @@ f'  WHERE condition'
 f')'
 f'SELECT column_name(s)'
 f'FROM cte_name;'
+
 # multiple CTEs
 f'WITH cte1 AS ('
 f'  SELECT column_name(s)'
@@ -548,6 +564,7 @@ f'  WHERE condition'
 f')'
 f'SELECT column_name(s)'
 f'FROM cte2;'
+
 # recursive CTE
 f'WITH RECURSIVE cte_name AS ('
 f'  SELECT column_name(s)'
