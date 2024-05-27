@@ -532,3 +532,23 @@ f'SELECT column_name(s)'
 f'FROM cte_name;'
 #
 
+# concat
+f'SELECT CONCAT(first_name, ' ', last_name) AS full_name
+
+# group_concat
+f'SELECT product_category, GROUP_CONCAT(product_name) AS products
+FROM products
+
+f'SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products' # order by product name in descending order and separate by comma, put all into one row
+
+# pivot - rotate rows into columns
+f'''SELECT product, [Jan], [Feb], [Mar]
+FROM (
+    SELECT month, product, sales
+    FROM sales
+) AS SourceTable
+PIVOT (
+    SUM(sales)
+    FOR month IN ([Jan], [Feb], [Mar])
+) AS PivotTable;
+'''
