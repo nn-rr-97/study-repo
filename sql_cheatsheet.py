@@ -566,16 +566,19 @@ f'SELECT column_name(s)'
 f'FROM cte2;'
 
 # recursive CTE
-f'WITH RECURSIVE cte_name AS ('
-f'  SELECT column_name(s)'
-f'  FROM table_name'
-f'  WHERE condition'
-f'UNION ALL'
-f'  SELECT column_name(s)'
-f'  FROM cte_name'
-f'  WHERE condition'
-f')'
-f'SELECT column_name(s)'
-f'FROM cte_name;'
-#
+f'''WITH RECURSIVE EmployeeHierarchy AS (
+    -- Anchor member: select the root of the hierarchy
+    SELECT employee_id, name, manager_id, 1 AS level
+    FROM employees
+    WHERE manager_id IS NULL
+
+    UNION ALL
+
+    -- Recursive member: select employees reporting to the ones already selected
+    SELECT e.employee_id, e.name, e.manager_id, eh.level + 1 # level + 1 for each recursive call, which is to find group of employees reporting to the ones already selected/same manager
+    FROM employees e
+    INNER JOIN EmployeeHierarchy eh ON e.manager_id = eh.employee_id
+)
+SELECT *
+FROM EmployeeHierarchy;'''
 
