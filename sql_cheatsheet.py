@@ -395,6 +395,37 @@ f'SELECT product_category, sales_amount,
        PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;'
 
+# ROWS BETWEEN - specify a window frame within a partition of a result set
+f'''
+SELECT month, sales,
+  SUM(sales) OVER (ORDER BY month ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS moving_sum
+FROM sales;''''
+
+# ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW - from the first row to the current row
+f'''SELECT month, sales, 
+       SUM(sales) OVER (ORDER BY month ROWS UNBOUNDED PRECEDING) AS cumulative_sales
+FROM sales;
+'''
+
+# n preceding - the n-th row before the current row
+f'''SELECT month, sales, 
+       SUM(sales) OVER (ORDER BY month ROWS 2 PRECEDING) AS moving_sum
+FROM sales;
+'''
+
+# current row - the current row
+f'''SELECT month, sales, 
+       SUM(sales) OVER (ORDER BY month ROWS BETWEEN CURRENT ROW AND CURRENT ROW) AS current_row_sales
+FROM sales;
+'''
+
+# n following - the n-th row after the current row
+f'''SELECT month, sales, 
+       SUM(sales) OVER (ORDER BY month ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) AS moving_sum_following
+FROM sales;
+'''
+
+
 # round
 f'SELECT product_name, ROUND(price, 2) AS rounded_price
 FROM products;'
