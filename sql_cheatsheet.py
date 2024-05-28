@@ -50,6 +50,14 @@ HAVING SUM(sales_amount) > 10000
 ORDER BY total_sales DESC
 LIMIT 10;'''
 
+# aggregated function and group by
+# when group by not needed - counting the number of rows in a table
+f'SELECT COUNT(*) FROM table_name;'
+# when group by needed - counting the number of rows in a table for each category
+f'SELECT category, COUNT(*) FROM table_name GROUP BY category;'
+# when group by needed - counting the number of rows in a table for each category and order by the count in descending order
+f'SELECT category, COUNT(*) FROM table_name GROUP BY category ORDER BY COUNT(*) DESC;'
+
 
 # not equal
 <> or !=
@@ -487,7 +495,6 @@ FROM products;'
 f'SELECT product_name, CAST(price AS INT) AS price_int'
 f'SELECT product_name, CAST(price AS DECIMAL(10,2)) AS price_decimal' # decimal with 10 digits and 2 decimal places, DECIMAL(precision, scale)
 
-
 # handle dates
 # DATE - format: 'YYYY-MM-DD'
 # TIME - format: 'HH:MM:SS'
@@ -626,6 +633,8 @@ FROM products
 f'SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products' # order by product name in descending order and separate by comma, put all into one row
 
 # pivot - rotate rows into columns
+# firstly write a subquery to select the columns to pivot
+# then get value for each column
 f'''SELECT product, [Jan], [Feb], [Mar]
 FROM (
     SELECT month, product, sales
