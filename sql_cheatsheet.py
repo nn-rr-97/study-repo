@@ -22,7 +22,6 @@ f'SELECT NVL(column_name, 'default_value') FROM table_name;' # Replaces NULL val
 #COALESCE(expression1, expression2, ..., expressionN) - returns the first non-NULL expression among its arguments
 f'SELECT COALESCE(column1, column2, 'default_value') FROM table_name;' # Returns the first non-NULL expression from a list of expressions.
 
-
 #NULLIF(expression1, expression2) - Returns NULL if expression1 equals expression2; otherwise, it returns expression1
 f'SELECT NULLIF(column1, column2) FROM table_name;' #If column1 equals column2, the result is NULL. Otherwise, it returns the value of column1.
 
@@ -40,7 +39,7 @@ f'SELECT NULLIF(column1, column2) FROM table_name;' #If column1 equals column2, 
 
 # Filters
 # the WHERE clause filters individual tuples before they are grouped via GROUP BY
-#the HAVING clause filters whole groups after they have been formed with GROUP BY
+# the HAVING clause filters whole groups after they have been formed with GROUP BY
 
 # orders
 f'''SELECT product_category, SUM(sales_amount) AS total_sales
@@ -339,6 +338,13 @@ ORDER BY total_sales DESC
 LIMIT 10;'
 
 # Ranking
+
+# patition - divide the data into groups within partitions, rather than across the entire dataset
+# ORDER BY - sort the data within each partition
+
+# window function - operate on a set of rows related to the current row
+# OVER() - defines the window frame within a partition of a result set
+
 # ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
 # RANK() - assigns a unique integer to each distinct row within the partition of a result set
 # DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
@@ -378,7 +384,7 @@ f'SELECT product_category, sales_amount,
 f'SELECT product_category, sales_amount,
        LAST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS last_sales_amount
   FROM sales;'
-# PERCENT_RANK()
+# PERCENT_RANK() 
 f'SELECT product_category, sales_amount,
        PERCENT_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount) AS percent_rank
   FROM sales;'
