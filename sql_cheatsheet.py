@@ -328,16 +328,48 @@ FROM table_name
 FETCH NEXT 5 ROWS ONLY;'
 
 
-# orders
-f'SELECT product_category, SUM(sales_amount) AS total_sales
-FROM sales
-WHERE sales_date > '2024-01-01'
-GROUP BY product_category
-HAVING SUM(sales_amount) > 10000
-ORDER BY total_sales DESC
-LIMIT 10;'
+# UNION - combine the result set of two or more SELECT statements
+# UNION - removes duplicate rows
+f'SELECT column_name(s)
+FROM table1
+UNION
+SELECT column_name(s)
+FROM table2;'
 
-# Ranking
+# UNION ALL - does not remove duplicate rows
+f'SELECT column_name(s)
+FROM table1
+UNION ALL
+SELECT column_name(s)
+FROM table2;'
+
+# EXISTS - to check for the existence of rows in a subquery, returns TRUE if the subquery returns one or more rows
+f'''SELECT SupplierName
+FROM Suppliers
+WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price < 20); # returns TRUE and lists the suppliers with a product price less than 20
+'''
+
+# NOT EXISTS - to check for the non-existence of rows in a subquery, returns TRUE if the subquery returns no rows
+
+# ANY - to compare a value to any value in a list or returned by a subquery
+# finds ANY records in the OrderDetails table has Quantity equal to 10
+f'''SELECT ProductName
+FROM Products
+WHERE ProductID = ANY
+  (SELECT ProductID
+  FROM OrderDetails
+  WHERE Quantity = 10);'''
+
+# ALL - to compare a value to every value in a list or returned by a subquery
+# lists the ProductName if ALL the records in the OrderDetails table has Quantity equal to 10, otherwise return false
+f'''SELECT ProductName
+FROM Products
+WHERE ProductID = ALL
+  (SELECT ProductID
+  FROM OrderDetails
+  WHERE Quantity = 10);'''
+
+# Window Functions
 
 # patition - divide the data into groups within partitions, rather than across the entire dataset
 # ORDER BY - sort the data within each partition
@@ -346,20 +378,16 @@ LIMIT 10;'
 # OVER() - defines the window frame within a partition of a result set
 
 # ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
-# RANK() - assigns a unique integer to each distinct row within the partition of a result set
-# DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
-# NTILE() - divides an ordered set of rows into a specified number of approximately equal groups
-# LAG() - accesses data from a previous row in the same result set without the use of a self-join
-
-# ROW_NUMBER()
 f'SELECT product_category, sales_amount,
        ROW_NUMBER() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
-# RANK()
+
+# # RANK() - assigns a unique integer to each distinct row within the partition of a result set, skipping the next integer if there is a tie
 f'SELECT product_category, sales_amount,
        RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
-# DENSE_RANK()
+
+# DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
 f'SELECT product_category, sales_amount,
        DENSE_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;'
@@ -368,38 +396,57 @@ f'SELECT product_category, sales_amount,
 f'SELECT product_category, sales_amount,
        NTILE(4) OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS quartile
   FROM sales;'
-# LAG()
+
+# LAG(amount,1) - accesses data from a previous row in the same result set without the use of a self-join
 f'SELECT product_category, sales_amount,
        LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
   FROM sales;'
-# LEAD()
+
+# LEAD() - accesses data from a subsequent row in the same result set without the use of a self-join
 f'SELECT product_category, sales_amount,
        LEAD(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS next_sales_amount
   FROM sales;'
-# FIRST_VALUE()
+
+# FIRST_VALUE() - returns the first value in an ordered set of values
 f'SELECT product_category, sales_amount,
        FIRST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS first_sales_amount
   FROM sales;'
-# LAST_VALUE()
+
+# LAST_VALUE() - returns the last value in an ordered set of values
 f'SELECT product_category, sales_amount,
        LAST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS last_sales_amount
   FROM sales;'
-# PERCENT_RANK() 
+
+# PERCENT_RANK() - calculates the relative rank of a value in a group of values, e.g. 0.33 means the value is greater than 33% of the values in the group
 f'SELECT product_category, sales_amount,
        PERCENT_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount) AS percent_rank
   FROM sales;'
-# CUME_DIST()
+
+# CUME_DIST() - calculates the cumulative distribution of a value in a group of values, It represents the proportion of rows with values less than or equal to the current row's value
 f'SELECT product_category, sales_amount,
        CUME_DIST() OVER (PARTITION BY product_category ORDER BY sales_amount) AS cume_dist
   FROM sales;'
-# PERCENTILE_CONT()
+
+# PERCENTILE_CONT() - calculates the value that corresponds to a specified percentile in a group of values
 f'SELECT product_category, sales_amount,
        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;'
-# PERCENTILE_DISC()
+
+# PERCENTILE_DISC() - calculates the value that corresponds to a specified percentile in a group of values
 f'SELECT product_category, sales_amount,
        PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;'
+
+# aggregate functions with window functions - get running aggregates
+f'SELECT product_category, sales_amount,
+       SUM(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_date) AS running_total
+  FROM sales;' # running total of sales_amount within each product_category
+
+# avg - moving average of a specified number of previous rows.
+# count - cumulative count of rows up to the current row.
+# max - maximum value of a specified number of previous rows.
+# min - minimum value of a specified number of previous rows.
+
 
 # ROWS BETWEEN - specify a window frame within a partition of a result set
 f'''
