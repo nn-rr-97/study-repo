@@ -12,17 +12,22 @@ df['column_1'] = df['column_1'].apply(lambda x: x + 10)
 # convert YES/NO to True/False
 df['yes_no'] = df['yes_no'].apply(lambda x: True if x == 'Yes' else False)
 
-# col/row based operation
+# define axis in apply()
 
-# axis=1: Operates across columns (from left to right). This is generally used for operations affecting columns.
-# row based operation axix = 1 - calculate a score from multiple columns, left to right operation
-df['score'] = df.apply(lambda x: x['math'] + x['science'] + x['english'], axis=1) # calculate student's total score
-
-# axis=0: Operates across rows (from top to bottom). This is generally used for operations affecting rows.
-# column based operation - calculate the sum score of multiple students
+# axis=0(vertical): Operates along rows that affacts columns (apply to each column)
+# calculate the sum score of multiple students
 subject_totals = df[['math', 'science', 'english']].apply(lambda col: col.sum(), axis=0) # col represents each single column, col.sum() to get sum of all values in that column
 # calculate math, science & english total scores seperately
 # output is panda series, each index represents a column
+
+# other example: summ all values in each column of a daraframe, drop rows with missing values, find max value in each column
+
+# axis=1(horizontal): Operates along columns (from left to right). This is generally used for operations affecting columns.
+# calculate a score from multiple columns, left to right operation
+df['score'] = df.apply(lambda x: x['math'] + x['science'] + x['english'], axis=1) # calculate student's total score
+
+# other examples: concantenate two dfs side by side, apply function to each column in a dataframe, drop columns with missing values
+
 
 # nest with if
 df['parsed_column_1'] = df['column_1'].apply(
