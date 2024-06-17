@@ -160,7 +160,6 @@ FROM Customers
 WHERE Country = 'Germany';'''
 
 
-
 # INSERT - with specific values
 f'INSERT INTO table_name (column1, column2, column3, ...)
 VALUES (value1, value2, value3, ...);
@@ -282,6 +281,21 @@ WHERE condition;'
 # when using with WHERE clause, it acts as INNER JOIN
 f'SELECT * FROM table1
 CROSS JOIN table2;'
+
+# anti join - returns rows from the first table that do not have a match in the second table
+f'SELECT column_name(s)
+FROM table1
+LEFT JOIN table2
+ON table1.column_name = table2.column_name
+WHERE table2.column_name IS NULL;'
+
+# or
+f'SELECT column_name(s)
+FROM table1
+WHERE column_name NOT IN
+(SELECT column_name
+FROM table2);'
+
 
 # Create view
 f'CREATE VIEW view_name AS
