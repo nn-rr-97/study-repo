@@ -51,6 +51,12 @@ while tend.date() > datetime.datetime(2024, 5, 1): # note compare date() with da
 
     tstart = tend - datetime.timedelta(days=1)
 
+# fill in dates - convert 'YYYY-MM' to 'YYYY-MM-01
+df['month'] = pd.to_datetime(df['month'], format='%Y-%m') + pd.offsets.MonthBegin(1)
+
+# convert 'YYYY-MM-DD' to 'YYYY-MM'
+df['month'] = pd.to_datetime(df['date']).dt.to_period('M')
+
 
 
 # python .map()
