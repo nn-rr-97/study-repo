@@ -600,56 +600,56 @@ f'SELECT column_name(s)
 FROM table_name 
 WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);'
 
-# common table expression (CTE) - temporary result set that can be referenced within a SELECT, INSERT, UPDATE, or DELETE statement
-f'WITH cte_name AS ('
-f'  SELECT column_name(s)'
-f'  FROM table_name'
-f'  WHERE condition'
-f')'
-f'SELECT column_name(s)'
-f'FROM cte_name;'
+-- common table expression (CTE) - temporary result set that can be referenced within a SELECT, INSERT, UPDATE, or DELETE statement
+WITH cte_name AS (
+  SELECT column_name(s)
+  FROM table_name
+  WHERE condition
+)
+SELECT column_name(s)
+FROM cte_name;
 
-# multiple CTEs
-f'WITH cte1 AS ('
-f'  SELECT column_name(s)'
-f'  FROM table_name'
-f'  WHERE condition'
-f'),'
-f'cte2 AS ('
-f'  SELECT column_name(s)'
-f'  FROM cte1'
-f'  WHERE condition'
-f')'
-f'SELECT column_name(s)'
-f'FROM cte2;'
+-- multiple CTEs
+WITH cte1 AS (
+  SELECT column_name(s)
+  FROM table_name
+  WHERE condition
+),
+cte2 AS (
+  SELECT column_name(s)
+  FROM cte1
+  WHERE condition
+)
+SELECT column_name(s)
+FROM cte2;
 
-# recursive CTE
-f'WITH RECURSIVE cte_name AS ('
-f'  SELECT column_name(s)'
-f'  FROM table_name'
-f'  WHERE condition'
-f'UNION ALL'
-f'  SELECT column_name(s)'
-f'  FROM cte_name'
-f'  WHERE condition'
-f')'
-f'SELECT column_name(s)'
-f'FROM cte_name;'
-#
+-- recursive CTE
+WITH RECURSIVE cte_name AS (
+  SELECT column_name(s)
+  FROM table_name
+  WHERE condition
+UNION ALL
+  SELECT column_name(s)
+  FROM cte_name
+  WHERE condition
+)
+SELECT column_name(s)
+FROM cte_name;
 
-# concat
-f'SELECT CONCAT(first_name, ' ', last_name) AS full_name
 
-# group_concat
-f'SELECT product_category, GROUP_CONCAT(product_name) AS products
+-- concat
+SELECT CONCAT(first_name, ' ', last_name) AS full_name
+
+-- group_concat
+SELECT product_category, GROUP_CONCAT(product_name) AS products
 FROM products
 
-f'SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products' # order by product name in descending order and separate by comma, put all into one row
+SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products -- order by product name in descending order and separate by comma, put all into one row
 
-# pivot - rotate rows into columns
-# firstly write a subquery to select the columns to pivot
-# then get value for each column
-f'''SELECT product, [Jan], [Feb], [Mar]
+-- pivot - rotate rows into columns
+-- firstly write a subquery to select the columns to pivot
+-- then get value for each column
+SELECT product, [Jan], [Feb], [Mar]
 FROM (
     SELECT month, product, sales
     FROM sales
@@ -658,6 +658,33 @@ PIVOT (
     SUM(sales)
     FOR month IN ([Jan], [Feb], [Mar])
 ) AS PivotTable;
-'''
 
+
+-- foreign key constraint with cascade delete 
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE -- remove the order when the product is deleted
+);
+
+-- foreign key constraint with cascade update
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    FOREIGN KEY (product_id) REFERENCES products (product_id) ON UPDATE CASCADE -- update the product_id in the order when the product_id in the products table is updated
+);
+
+-- foreign key constraint with is null
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE SET NULL -- set the product_id in the order to NULL when the product is deleted
+);
+
+-- foreign key constraint with no action
+create table orders (
+    order_id INT PRIMARY KEY,
+    product_id INT,
+    FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE NO ACTION -- do nothing when the product is deleted
+);
 
