@@ -160,86 +160,84 @@ FROM Customers
 WHERE Country = 'Germany';'''
 
 
-# INSERT - with specific values
-f'INSERT INTO table_name (column1, column2, column3, ...)
+-- INSERT - with specific values
+INSERT INTO table_name (column1, column2, column3, ...)
 VALUES (value1, value2, value3, ...);
-'
-#INSERT - with multiple specific values
-f'INSERT INTO table_name (column1, column2, ...)
-VALUES (value1, value2, ...), (value1, value2, ...), ...;
-'
 
-# INSERT - with values from another table
-f'INSERT INTO table_name
+-- INSERT - with multiple specific values
+INSERT INTO table_name (column1, column2, ...)
+VALUES (value1, value2, ...), (value1, value2, ...), ...;
+
+-- INSERT - with values from another table
+INSERT INTO table_name
 SELECT column1, column2, column3, ...
 FROM another_table_name
-WHERE condition;'
+WHERE condition;
 
-# INSERT - with no duplicates
-f"INSERT INTO table_B (column1, column2, ...)
+-- INSERT - with no duplicates
+INSERT INTO table_B (column1, column2, ...)
 SELECT column1, column2, ...
 FROM table_A
-WHERE table_A.unique_key NOT IN (SELECT unique_key FROM table_B);"
+WHERE table_A.unique_key NOT IN (SELECT unique_key FROM table_B);
 
 
-f"INSERT INTO table_B (column1, column2, ...)
+INSERT INTO table_B (column1, column2, ...)
 SELECT column1, column2, ...
 FROM table_A
-WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);"
+WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);
 
-f"INSERT INTO table_B (column1, column2, ...)
+INSERT INTO table_B (column1, column2, ...)
 SELECT DISTINCT column1, column2, ...
 FROM table_A
 WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);
-"
 
-# update
-f"UPDATE Customers
+-- update
+UPDATE Customers
 SET ContactName = 'Alfred Schmidt', City = 'Frankfurt'
-WHERE CustomerID = 1;"
+WHERE CustomerID = 1;
 
 
-# delete
+-- delete
 f'DELETE FROM table_name
 WHERE condition;'
 
-# ----------------JOIN----------------
-# INNER JOIN - returns rows when there is at least one match in both tables (From..Join,,)
-f'SELECT column_name(s)
+ ----------------JOIN----------------
+-- INNER JOIN - returns rows when there is at least one match in both tables (From..Join,,)
+SELECT column_name(s)
 FROM table1
 INNER JOIN table2
-ON table1.column_name = table2.column_name;'
+ON table1.column_name = table2.column_name;
 
-# INNER JOIN - with multiple conditions
-f'SELECT column_name(s)
+-- INNER JOIN - with multiple conditions
+SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name1 = table2.column_name1
-AND table1.column_name2 = table2.column_name2;'
+AND table1.column_name2 = table2.column_name2;
 
-# INNER JOIN - with multiple tables
-f'SELECT column_name(s)
+-- INNER JOIN - with multiple tables
+SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
 INNER JOIN table3
-ON table1.column_name = table3.column_name;'
+ON table1.column_name = table3.column_name;
 
-# INNER JOIN - with WHERE clause
-f'SELECT column_name(s)
+-- INNER JOIN - with WHERE clause
+SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
-WHERE condition;'
+WHERE condition;
 
-# INNER JOIN - with GROUP BY
-f'SELECT column_name(s)
+-- INNER JOIN - with GROUP BY
+SELECT column_name(s)
 FROM table1
 INNER JOIN table2
 ON table1.column_name = table2.column_name
-GROUP BY column_name;'
+GROUP BY column_name;
 
-# INNER JOIN - with ORDER BY
+-- INNER JOIN - with ORDER BY
 f'SELECT column_name(s)
 FROM table1
 INNER JOIN table2
