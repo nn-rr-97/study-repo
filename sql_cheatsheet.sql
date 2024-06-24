@@ -648,6 +648,19 @@ PIVOT (
 ) AS PivotTable;
 
 
+-- foreign key constraint: a field in a table that refers to the PRIMARY KEY in another table, used to link two tables together
+-- foreign key constraint ensures the referential integrity of the data between the two tables
+
+-- below table has a foreign key constraint that references the primary key in the Persons table
+CREATE TABLE Orders (
+    OrderID int NOT NULL,
+    OrderNumber int NOT NULL,
+    PersonID int,
+    PRIMARY KEY (OrderID), -- primary key
+    CONSTRAINT FK_PersonOrder FOREIGN KEY (PersonID) 
+    REFERENCES Persons(PersonID) -- foreign key, references the primary key in the Persons table
+);
+
 -- foreign key constraint with cascade delete 
 CREATE TABLE orders (
     order_id INT PRIMARY KEY,
