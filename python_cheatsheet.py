@@ -64,6 +64,29 @@ df['month'] = pd.to_datetime(df['month'], format='%Y-%m') + pd.offsets.MonthBegi
 # convert 'YYYY-MM-DD' to 'YYYY-MM'
 df['month'] = pd.to_datetime(df['date']).dt.to_period('M')
 
+# handling json files
+# read json files
+import json
 
+with open('data.json') as f:
+    data = json.load(f)
+
+# write json files
+data = {'name': 'John', 'age': 30, 'city': 'New York'}
+with open('data.json', 'w') as f:
+    json.dump(data, f) # dump data to json file means write data to json file
+
+# normalize json data
+from pandas import json_normalize
+data = {
+    'name': 'John',
+    'age': 30,
+    'city': 'New York',
+    'cars': [{'model': 'Audi', 'mpg': 25}, {'model': 'BMW', 'mpg': 27}]
+}
+df = json_normalize(data, 'cars', ['name', 'age', 'city']) # normalize json data into a flat table
 
 # python .map()
+# map a function to each element in a Series
+df['column_1'] = df['column_1'].map(lambda x: x + 10)
+
