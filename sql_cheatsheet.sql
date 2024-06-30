@@ -153,6 +153,20 @@ f'''SELECT uosCode, uosName, COUNT(*) AS numStudents,
  GROUP BY uosCode, uosName;'''
 
 
+-- Multiple CASE WHEN with OR
+SELECT
+    employee_id,
+    first_name,
+    last_name,
+    CASE
+        WHEN first_name LIKE 'A%' OR last_name LIKE 'A%' THEN 'Starts with A'
+        WHEN first_name LIKE 'B%' OR last_name LIKE 'B%' THEN 'Starts with B'
+        ELSE 'Other'
+    END AS name_category
+FROM
+    employees;
+
+
 # select into - create a new table from an existing table
 # copies only the German customers into a new table
 f'''SELECT * INTO CustomersGermany
@@ -363,31 +377,31 @@ UNION ALL
 SELECT column_name(s)
 FROM table2;'
 
-# EXISTS - to check for the existence of rows in a subquery, returns TRUE if the subquery returns one or more rows
-f'''SELECT SupplierName
+-- EXISTS - to check for the existence of rows in a subquery, returns TRUE if the subquery returns one or more rows
+SELECT SupplierName
 FROM Suppliers
 WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price < 20); # returns TRUE and lists the suppliers with a product price less than 20
-'''
 
-# NOT EXISTS - to check for the non-existence of rows in a subquery, returns TRUE if the subquery returns no rows
 
-# ANY - to compare a value to any value in a list or returned by a subquery
-# finds ANY records in the OrderDetails table has Quantity equal to 10
-f'''SELECT ProductName
+-- NOT EXISTS - to check for the non-existence of rows in a subquery, returns TRUE if the subquery returns no rows
+
+-- ANY - to compare a value to any value in a list or returned by a subquery
+-- finds ANY records in the OrderDetails table has Quantity equal to 10
+SELECT ProductName
 FROM Products
 WHERE ProductID = ANY
   (SELECT ProductID
   FROM OrderDetails
-  WHERE Quantity = 10);'''
+  WHERE Quantity = 10);
 
-# ALL - to compare a value to every value in a list or returned by a subquery
-# lists the ProductName if ALL the records in the OrderDetails table has Quantity equal to 10, otherwise return false
-f'''SELECT ProductName
+-- ALL - to compare a value to every value in a list or returned by a subquery
+-- lists the ProductName if ALL the records in the OrderDetails table has Quantity equal to 10, otherwise return false
+SELECT ProductName
 FROM Products
 WHERE ProductID = ALL
   (SELECT ProductID
   FROM OrderDetails
-  WHERE Quantity = 10);'''
+  WHERE Quantity = 10);
 
 # Window Functions
 
@@ -575,28 +589,38 @@ f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_sinc
 
 
 # -----------------Subquery-----------------
-# Subquery - query within another query
-# Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
-# Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
+-- Subquery - query within another query
+-- Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
+-- Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
 
-# create new table for outer query
-f'SELECT employee_id, total_sales
+-- create new table for outer query
+SELECT employee_id, total_sales
 FROM (
     SELECT employee_id, SUM(sale_amount) AS total_sales
     FROM sales
     GROUP BY employee_id
 ) AS SalesSubquery
-WHERE total_sales > 10000;'
+WHERE total_sales > 10000;
 
-# single value subquery
-f'SELECT column_name(s)
+-- single value subquery
+SELECT column_name(s)
 FROM table_name
 WHERE column_name = (SELECT column_name FROM table_name WHERE condition);
 
-# multiple value subquery
-f'SELECT column_name(s) 
+-- multiple value subquery
+SELECT column_name(s) 
 FROM table_name 
-WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);'
+WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);
+
+-- subquery within select
+SELECT column_name, (SELECT column_name FROM table_name WHERE condition) AS subquery_column
+
+-- subquery directly used in join
+SELECT column_name(s)
+FROM table1
+JOIN (SELECT column_name(s) FROM table2 WHERE condition) AS subquery_table
+ON table1.column_name = subquery_table.column_name;
+
 
 -- common table expression (CTE) - temporary result set that can be referenced within a SELECT, INSERT, UPDATE, or DELETE statement
 WITH cte_name AS (
@@ -634,21 +658,66 @@ UNION ALL
 SELECT column_name(s)
 FROM cte_name;
 
-
--- concat
+-- string manipulation
+-- CONCAT() - concatenate two or more strings
 SELECT CONCAT(first_name, ' ', last_name) AS full_name
 
 -- group_concat
 SELECT product_category, GROUP_CONCAT(product_name) AS products
 FROM products
 
-SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products -- order by product name in descending order and separate by comma, put all into one row
+SELECT product_category, S(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products -- order by product name in descending order and separate by comma, put all into one row
+
+-- substring(), used to extract a substring from a string
+SELECT SUBSTRING(product_name, 1, 3) AS short_name -- get the first 3 characters of the product name, SUBSTRING(product_name, 1, 3) means start from the first character and get 3 characters
+
+-- USE substring to get the last 3 characters of the product name
+SELECT SUBSTRING(product_name, LENGTH(product_name) - 2, 3) AS short_name -- get the last 3 characters of the product name
+
+-- or negative index
+SELECT SUBSTRING(product_name, -3) AS short_name -- get the last 3 characters of the product name
+
+-- mid(), used to get a specified number of characters from a string starting at a specified position
+SELECT MID(product_name, 4, 3) AS short_name -- get 3 characters starting from the 4th character of the product name
+
+-- ucase(), used to convert a string to uppercase
+
+-- left(), used to get a specified number of characters from the left of a string
+SELECT LEFT(product_name, 3) AS short_name -- get the first 3 characters of the product name
+
+-- right(), used to get a specified number of characters from the right of a string
+SELECT RIGHT(product_name, 3) AS short_name -- get the last 3 characters of the product name
+
+-- replace(), used to replace a substring with another substring
+SELECT REPLACE(product_name, 'old_string', 'new_string') AS updated_name -- replace 'old_string' with 'new_string' in the product name
+
+-- trim(), used to remove leading and trailing spaces from a string
+SELECT TRIM(product_name) AS trimmed_name -- remove leading and trailing spaces from the product name
+
+-- ltrim(), used to remove leading spaces from a string
+SELECT LTRIM(product_name) AS trimmed_name -- remove leading spaces from the product name
+
+-- rtrim(), used to remove trailing spaces from a string
+SELECT RTRIM(product_name) AS trimmed_name -- remove trailing spaces from the product name
+
+-- upper(), used to convert a string to uppercase
+SELECT UPPER(product_name) AS upper_name -- convert the product name to uppercase
+
+-- lower(), used to convert a string to lowercase
+SELECT LOWER(product_name) AS lower_name -- convert the product name to lowercase
+
+-- length(), used to get the length of a string
+SELECT LENGTH(product_name) AS name_length -- get the length of the product name
+
+-- locate(), used to find the position of a substring in a string
+SELECT LOCATE('substring', product_name) AS position -- find the position of 'substring' in the product name
+
 
 -- pivot - rotate rows into columns
 -- firstly write a subquery to select the columns to pivot
 -- then get value for each column
 SELECT product, [Jan], [Feb], [Mar]
-FROM (
+FROM ( 
     SELECT month, product, sales
     FROM sales
 ) AS SourceTable
@@ -685,4 +754,213 @@ create table orders (
     product_id INT,
     FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE NO ACTION -- do nothing when the product is deleted
 );
+
+-- row increment apart from using row_number()
+@row_number:=@row_number+1 AS row_number -- increment row number by 1
+-- need to initialize the variable before using it
+SET @row_number:=0;
+
+-- below is an example of using row increment that assigns a row number to each name where the occupation is 'Doctor'
+SELECT @rownum1 := @rownum1 + 1 AS num1, name AS n1 
+FROM occupations, (SELECT @rownum1 := 0) r 
+WHERE occupation = 'Doctor' 
+ORDER BY name) AS t1
+
+-- the above code is equivalent to the following code
+SELECT ROW_NUMBER() OVER (ORDER BY name) AS num1, name AS n1
+FROM occupations
+WHERE occupation = 'Doctor'
+ORDER BY name;
+
+-- math functions in SQL
+-- +, -, *, / - addition, subtraction, multiplication, division
+SELECT 10 + 5 AS sum -- get 15
+SELECT 10 - 5 AS difference -- get 5
+SELECT 10 * 5 AS product -- get 50
+SELECT 10 / 5 AS quotient -- get 2
+
+-- % - modulo operator, returns the remainder of a division operation
+SELECT 10 % 3 AS remainder -- get 1
+
+-- find length of a string
+SELECT LENGTH('Hello, World!') AS string_length -- get 13
+
+-- ABS() - returns the absolute value of a number
+SELECT ABS(-10) AS absolute_value -- get 10
+
+-- CEIL() - returns the smallest integer greater than or equal to a number
+SELECT CEIL(10.5) AS ceiling_value -- get 11
+
+-- FLOOR() - returns the largest integer less than or equal to a number
+SELECT FLOOR(10.5) AS floor_value -- get 10
+
+-- ROUND() - rounds a number to a specified number of decimal places
+SELECT ROUND(10.5) AS rounded_value -- get 11
+
+-- SQRT() - returns the square root of a number
+SELECT SQRT(16) AS square_root -- get 4
+
+-- POWER() - returns the value of a number raised to the power of another number
+SELECT POWER(2, 3) AS power_value -- get 8
+
+-- MOD() - returns the remainder of a division operation
+SELECT MOD(10, 3) AS remainder -- get 1
+
+-- RAND() - returns a random number
+SELECT RAND() AS random_number -- get a random number between 0 and 1
+
+-- TRUNCATE() - truncates a number to a specified number of decimal places
+SELECT TRUNCATE(10.5678, 2) AS truncated_value -- get 10.56
+
+-- PI() - returns the value of pi
+SELECT PI() AS pi_value -- get 3.141592653589793
+
+-- E() - returns the value of e
+SELECT E() AS e_value -- get 2.718281828459045
+
+-- LOG() - returns the natural logarithm of a number
+SELECT LOG(10) AS natural_logarithm -- get 2.302585092994046
+
+-- LOG10() - returns the base-10 logarithm of a number
+SELECT LOG10(100) AS base_10_logarithm -- get 2
+
+-- EXP() - returns e raised to the power of a number
+SELECT EXP(1) AS exponential_value -- get 2.718281828459045
+
+-- GREATEST() - returns the greatest value in a list of values
+SELECT GREATEST(10, 20, 30) AS greatest_value -- get 30
+
+-- LEAST() - returns the smallest value in a list of values
+SELECT LEAST(10, 20, 30) AS smallest_value -- get 10
+
+-- SIGN() - returns the sign of a number
+SELECT SIGN(-10) AS sign_value -- get -1
+
+-- SIN() - returns the sine of an angle
+SELECT SIN(0) AS sine_value -- get 0
+
+-- COS() - returns the cosine of an angle
+SELECT COS(0) AS cosine_value -- get 1
+
+-- TAN() - returns the tangent of an angle
+SELECT TAN(0) AS tangent_value -- get 0
+
+-- ASIN() - returns the arcsine of a number
+SELECT ASIN(0) AS arcsine_value -- get 0
+
+-- ACOS() - returns the arccosine of a number
+SELECT ACOS(1) AS arccosine_value -- get 0
+
+-- ATAN() - returns the arctangent of a number
+SELECT ATAN(0) AS arctangent_value -- get 0
+
+-- ATAN2() - returns the arctangent of the quotient of two numbers
+SELECT ATAN2(0, 1) AS arctangent_value -- get 0
+
+-- DEGREES() - converts radians to degrees
+SELECT DEGREES(0) AS degrees_value -- get 0
+
+-- RADIANS() - converts degrees to radians
+SELECT RADIANS(0) AS radians_value -- get 0
+
+
+-- regular espression
+-- RLIKE - checks if a string matches a regular expression, RLIKE is case-insensitive
+SELECT product_name
+FROM products
+WHERE product_name RLIKE '^A.*'; -- get product names that start with 'A'
+
+-- REGEXP - checks if a string matches a regular expression. Same as RLIKE and case-insensitive, more widely used
+SELECT product_name
+FROM products
+WHERE product_name REGEXP '^A.*'; -- get product names that start with 'A'
+
+-- binary string comparison, case-sensitive
+SELECT product_name
+FROM products
+WHERE product_name = BINARY 'apple'; -- get product names that are exactly 'apple'
+
+-- '.*' - matches any sequence of characters
+
+-- ^ - matches the start of a string
+SELECT product_name FROM products WHERE product_name RLIKE '^A.*'; -- get product names that start with 'A'
+
+-- . - matches any character
+SELECT product_name FROM products WHERE product_name RLIKE 'A.'; -- get product names that have 'A' followed by any character
+
+-- * - matches zero or more occurrences of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A.*'; -- get product names that have 'A' followed by zero or more characters
+
+-- + - matches one or more occurrences of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A+'; -- get product names that have 'A' followed by one or more characters
+
+-- ? - matches zero or one occurrence of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A?'; -- get product names that have 'A' followed by zero or one character
+
+-- {n} - matches exactly n occurrences of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A{2}'; -- get product names that have 'A' followed by exactly 2 characters
+
+-- {n,} - matches n or more occurrences of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A{2,}'; -- get product names that have 'A' followed by 2 or more characters
+
+-- {n,m} - matches between n and m occurrences of the preceding character
+SELECT product_name FROM products WHERE product_name RLIKE 'A{2,4}'; -- get product names that have 'A' followed by between 2 and 4 characters
+
+-- \ - escapes a special character
+SELECT product_name FROM products WHERE product_name RLIKE 'A\.'; -- get product names that have 'A.'
+
+-- \d - matches any digit, example: [0-9]
+SELECT product_name FROM products WHERE product_name RLIKE '\d'; -- get product names that have any digit
+
+-- \D - matches any non-digit, non-digit means any character that is not a digit
+SELECT product_name FROM products WHERE product_name RLIKE '\D'; -- get product names that have any non-digit
+
+-- \w - matches any word character, word character means any letter, digit, or underscore
+SELECT product_name FROM products WHERE product_name RLIKE '\w'; -- get product names that have any word character
+
+-- \W - matches any non-word character. non-word character means any character that is not a letter, digit, or underscore, such as whitespace or punctuation
+SELECT product_name FROM products WHERE product_name RLIKE '\W'; -- get product names that have any non-word character
+
+-- \s - matches any whitespace character
+SELECT product_name FROM products WHERE product_name RLIKE '\s'; -- get product names that have any whitespace character
+
+-- \S - matches any non-whitespace character
+SELECT product_name FROM products WHERE product_name RLIKE '\S'; -- get product names that have any non-whitespace character
+
+-- $ - matches the end of a string
+SELECT product_name FROM products WHERE product_name RLIKE '.*A$'; -- get product names that end with 'A'
+
+-- [abc] - matches any character within the brackets, letters in brackets are treated as individual characters and case-sensitive
+SELECT product_name FROM products WHERE product_name RLIKE 'A[bc]'; -- get product names that have 'A' followed by 'b' or 'c'
+
+-- [a-z] - matches any character in the range from 'a' to 'z'
+SELECT product_name FROM products WHERE product_name RLIKE 'A[a-z]'; -- get product names that have 'A' followed by a lowercase letter
+
+-- [^abc] - matches any character not within the brackets
+SELECT product_name FROM products WHERE product_name RLIKE 'A[^bc]'; -- get product names that have 'A' followed by a character that is not 'b' or 'c'
+
+-- [^a-z] - matches any character not in the range from 'a' to 'z'
+SELECT product_name FROM products WHERE product_name RLIKE 'A[^a-z]'; -- get product names that have 'A' followed by a character that is not a lowercase letter
+
+-- | - matches either the expression before or after the operator
+SELECT product_name FROM products WHERE product_name RLIKE 'A|B'; -- get product names that have 'A' or 'B'
+
+-- () - groups expressions together
+SELECT product_name FROM products WHERE product_name RLIKE '(A|B)'; -- get product names that have 'A' or 'B'
+
+-- REGEXP_LIKE() - checks if a string matches a regular expression
+SELECT product_name
+FROM products
+WHERE REGEXP_LIKE(product_name, '^A.*'); -- get product names that start with 'A'
+
+-- REGEXP_REPLACE() - replaces a substring that matches a regular expression with another substring
+SELECT REGEXP_REPLACE(product_name, 'old_string', 'new_string') AS updated_name -- replace 'old_string' with 'new_string' in the product name
+
+-- REGEXP_INSTR() - returns the position of the first occurrence of a regular expression in a string
+SELECT REGEXP_INSTR(product_name, 'substring') AS position -- find the position of 'substring' in the product name
+
+-- REGEXP_SUBSTR() - returns a substring that matches a regular expression
+SELECT REGEXP_SUBSTR(product_name, 'substring') AS matched_substring -- find the substring that matches 'substring' in the product name
+
+
 
