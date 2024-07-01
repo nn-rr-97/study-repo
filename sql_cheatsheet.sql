@@ -58,6 +58,14 @@ SELECT category, COUNT(*) FROM table_name GROUP BY category;
 -- when group by needed - counting the number of rows in a table for each category and order by the count in descending order
 SELECT category, COUNT(*) FROM table_name GROUP BY category ORDER BY COUNT(*) DESC;
 
+-- remove zero in integer numbers
+SELECT TRIM(TRAILING '0' FROM column_name) FROM table_name; -- this removes trailing zeros from the column values
+
+-- REMOVE zeros using replace
+SELECT REPLACE(column_name, '.0', '') FROM table_name; -- this removes '.0' from the column values
+
+
+
 
 -- not equal
 <> or !=
@@ -827,6 +835,9 @@ SELECT FLOOR(10.5) AS floor_value -- get 10
 
 -- ROUND() - rounds a number to a specified number of decimal places
 SELECT ROUND(10.5) AS rounded_value -- get 11
+
+-- ceiling() - returns the smallest integer greater than or equal to a number
+SELECT CEILING(10.5) AS ceiling_value -- get 11
 
 -- SQRT() - returns the square root of a number
 SELECT SQRT(16) AS square_root -- get 4
