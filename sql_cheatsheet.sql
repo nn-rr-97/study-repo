@@ -172,9 +172,9 @@ FROM
     employees;
 
 
-# select into - create a new table from an existing table
-# copies only the German customers into a new table
-f'''SELECT * INTO CustomersGermany
+-- select into - create a new table from an existing table
+-- copies only the German customers into a new table
+SELECT * INTO CustomersGermany
 FROM Customers
 WHERE Country = 'Germany';
 
