@@ -444,6 +444,8 @@ WHERE ProductID = ALL
 -- window function - operate on a set of rows related to the current row
 -- OVER() - defines the window frame within a partition of a result set
 
+-- no need to be included in the GROUP BY clause as it operates on the result set after the GROUP BY clause has been applied
+
 -- ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
 SELECT product_category, sales_amount,
        ROW_NUMBER() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
@@ -577,6 +579,13 @@ SELECT product_name, TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date
 -- INTERVAL - represents a period of time
 SELECT DATE_ADD('2024-05-27', INTERVAL 1 MONTH) AS new_date; -- get 2024-06-27
 SELECT DATE_SUB('2024-05-27 10:00:00', INTERVAL 2 HOUR) AS new_datetime; -- get 2024-05-27 08:00:00
+
+-- directly add interval to date
+SELECT product_name, sales_date + INTERVAL 1 DAY AS next_day
+-- or only find the most recent 12 months
+select product from sales where sales_date > current_date - interval '12 months';
+-- or only find the most recent 20 days
+select product from sales where sales_date > current_date - interval '20 days';
 
 -- CURRENT_DATE - returns the current date
 SELECT product_name, CURRENT_DATE AS current_date
@@ -1026,5 +1035,20 @@ SELECT REGEXP_SUBSTR(product_name, 'substring') AS matched_substring -- find the
 -- e.g. find the first digit in the product name
 SELECT REGEXP_SUBSTR(product_name, '\d') AS matched_substring -- find the first digit in the product name
 
+-- flattern arrays in SQL
+-- UNNEST() - used to flatten an array into rows
+SELECT UNNEST(array_column) AS column_name
+FROM table_name;
 
+-- FLATTEN() - used to flatten an array into rows
+SELECT FLATTEN(array_column) AS column_name
+FROM table_name;
+
+-- UNPACK() - used to flatten an array into rows
+SELECT UNPACK(array_column) AS column_name
+FROM table_name;
+
+-- ARRAY_AGG() - used to aggregate values into an array
+SELECT column_name, ARRAY_AGG(array_column) AS column_name
+FROM table_name
 
