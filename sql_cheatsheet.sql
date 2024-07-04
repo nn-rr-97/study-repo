@@ -1,8 +1,14 @@
--- case sensitive
+-- SQL character index starts from 1
+
+-- case sensitivity
 -- keywords and commands are case-insensitive
 -- data and operators can be case-sensitive
 SELECT * FROM users WHERE username LIKE 'alice'; -- case-sensitive or not depends on the collation of the database
 SELECT * FROM users WHERE BINARY username LIKE 'alice'; -- case-sensitive
+
+-- use of customised alias
+-- Best practice is to avoid using custom aliases in WHERE, GROUP BY, and HAVING clauses of the same query level.
+-- Although MySQL allows aliases in GROUP BY and HAVING clauses
 
 -- limit - limit the number of rows returned by a query
 SELECT * FROM table_name LIMIT 5; -- returns the first 5 rows from the table
@@ -20,11 +26,13 @@ FROM Products;
 SELECT NVL(column_name, 'default_value') FROM table_name; -- Replaces NULL values in a column with a specified value.
 
 -- COALESCE(expression1, expression2, ..., expressionN) - returns the first non-NULL expression among its arguments
-SELECT COALESCE(column1, column2, 'default_value') FROM table_name; -- Returns the first non-NULL expression from a list of expressions.
+SELECT COALESCE(column1, column2, 'default_value') FROM table_name; -- return the value of column1 if it's not null, otherwise column2, and if both are null, it returns 'default_value'.
+
+-- COALESCE can also be used to replace NULL values with a specified value.
+SELECT COALESCE(column_name, 'default_value') FROM table_name; -- Replaces NULL values in a column with a specified value.
 
 -- NULLIF(expression1, expression2) - Returns NULL if expression1 equals expression2; otherwise, it returns expression1
 SELECT NULLIF(column1, column2) FROM table_name; -- If column1 equals column2, the result is NULL. Otherwise, it returns the value of column1.
-
 
 -- primary key
 -- unique identifier for each table row
@@ -42,13 +50,18 @@ SELECT NULLIF(column1, column2) FROM table_name; -- If column1 equals column2, t
 -- the HAVING clause filters whole groups after they have been formed with GROUP BY
 
 -- orders
-SELECT product_category, SUM(sales_amount) AS total_sales
+SELECT distinct product_category, SUM(sales_amount) AS total_sales
 FROM sales
+join products
+on sales.product_id = products.product_id
 WHERE sales_date > '2024-01-01'
 GROUP BY product_category
 HAVING SUM(sales_amount) > 10000
 ORDER BY total_sales DESC
-LIMIT 10;
+LIMIT 10
+OFFSET 5;
+
+-- the order of the clauses in a SQL query start with FROM, JOIN, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, and LIMIT/OFFSET
 
 -- aggregated function and group by
 -- when group by not needed - counting the number of rows in a table
@@ -59,13 +72,10 @@ SELECT category, COUNT(*) FROM table_name GROUP BY category;
 SELECT category, COUNT(*) FROM table_name GROUP BY category ORDER BY COUNT(*) DESC;
 
 -- remove zero in integer numbers
-SELECT TRIM(TRAILING '0' FROM column_name) FROM table_name; -- this removes trailing zeros from the column values
+SELECT TRIM(TRAILING '0' FROM column_name) FROM table_name; -- this removes trailing zeros from the column values, trailing means zeros at the end
 
 -- REMOVE zeros using replace
-SELECT REPLACE(column_name, '.0', '') FROM table_name; -- this removes '.0' from the column values
-
-
-
+SELECT REPLACE(column_name, '0', '') FROM table_name; -- this removes '0' from the column values
 
 -- not equal
 <> or !=
@@ -90,7 +100,7 @@ SELECT uosCode, uosName
  WHERE uosCode SIMILAR TO 'COMP[[:digit:]]{4}'; -- start with COMP followed by 4 digits
 
 -- Regular Expression
--- ~ operator
+-- ~ operator, ~ is used to match a regular expression pattern, similar to LIKE but for more complex pattern matching
 SELECT uosCode, uosName
   FROM UnitOfStudy
  WHERE uosName ~ '^[A-D].*'; -- start with A to D
@@ -121,7 +131,7 @@ SELECT uosCode, uosName
 
 -- conditional data aggregation
 
--- filter - straifhtforward condition
+-- filter - straifhtforward condition, not widely used, CASE WHEN is more preferrable
 SUM(amount) FILTER (WHERE condition) -- sum of amount where condition is met
 
 SELECT
@@ -178,7 +188,6 @@ SELECT * INTO CustomersGermany
 FROM Customers
 WHERE Country = 'Germany';
 
-
 -- INSERT - with specific values
 INSERT INTO table_name (column1, column2, column3, ...)
 VALUES (value1, value2, value3, ...);
@@ -203,12 +212,11 @@ WHERE table_A.unique_key NOT IN (SELECT unique_key FROM table_B);
 INSERT INTO table_B (column1, column2, ...)
 SELECT column1, column2, ...
 FROM table_A
-WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);
+WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key); -- return 1 if the subquery returns one or more rows, otherwise return 0
 
-INSERT INTO table_B (column1, column2, ...)
-SELECT DISTINCT column1, column2, ...
-FROM table_A
-WHERE NOT EXISTS (SELECT 1 FROM table_B WHERE table_B.unique_key = table_A.unique_key);
+-- select 1 in sql, doesn't return any data, just checks if there is at least one row that meets the condition
+SELECT 1 FROM table WHERE condition LIMIT 1
+
 
 -- update
 UPDATE Customers
@@ -355,16 +363,16 @@ CREATE VIEW view_name AS
 SELECT column1, column2
 FROM table_name
 OFFSET 5;
+-- view with FETCH, fetch is used to limit the number of rows returned by a query, similar to LIMIT
+CREATE VIEW view_name AS
+SELECT column1, column2
+FROM table_name
+FETCH FIRST 5 ROWS ONLY; -- fetch first 5 rows
 -- view with FETCH
 CREATE VIEW view_name AS
 SELECT column1, column2
 FROM table_name
-FETCH FIRST 5 ROWS ONLY;
--- view with FETCH
-CREATE VIEW view_name AS
-SELECT column1, column2
-FROM table_name
-FETCH NEXT 5 ROWS ONLY;
+FETCH NEXT 5 ROWS ONLY; -- fetch next 5 rows, next 5 rows mean the rows after the first 5 rows
 
 
 -- UNION - combine the result set of two or more SELECT statements
@@ -382,13 +390,33 @@ UNION ALL
 SELECT column_name(s)
 FROM table2;
 
--- EXISTS - to check for the existence of rows in a subquery, returns TRUE if the subquery returns one or more rows
+-- UNION ALL is faster than UNION as it does not remove duplicates
+-- UNION ALL is used when you want to include all rows from multiple SELECT statements
+-- UNION is used when you want to remove duplicate rows from the result set
+
+-- compare UNION ALL with just two SELECT statements 
+-- Separate SELECT Statements are useful when you need to retrieve and display results from multiple tables independently.
+-- UNION ALL is useful when you want to combine results from multiple tables into a single result set, including all duplicates.
+
+-- EXIST and NOT EXIST, used in WHERE clause to check for the existence of rows in a subquery
+-- They don't return any data. They act as a test or condition within the WHERE clause, and provide a TRUE/FALSE evaluation for each row in the outer query
+
+-- How they work: For each row in the outer query, the subquery (inside EXISTS or NOT EXISTS) is executed. EXISTS evaluates to TRUE if the subquery returns any rows, 
+-- FALSE otherwise; NOT EXISTS evaluates to TRUE if the subquery returns no rows, FALSE otherwise. The outer query Uses this TRUE/FALSE information to decide which 
+-- rows to include in the final result set, and returns rows from the table(s) specified in its FROM clause, not from the subquery.
+
+-- EXISTS, below outer query will return the supplier name based on EXISTS condition. If EXISTS is True for a supplier, it will return the supplier name
+-- find suppliers who have products priced less than $20
 SELECT SupplierName
 FROM Suppliers
-WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price < 20); # returns TRUE and lists the suppliers with a product price less than 20
+WHERE EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price < 20);
 
 
--- NOT EXISTS - to check for the non-existence of rows in a subquery, returns TRUE if the subquery returns no rows
+-- NOT EXISTS, below outer query will return the supplier name based on NOT EXISTS condition. If NOT EXISTS is True for a supplier, it will return the supplier name
+-- find suppliers who do not have any products priced over $100,000
+SELECT SupplierName
+from Suppliers
+WHERE NOT EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price > 100000);
 
 -- ANY - to compare a value to any value in a list or returned by a subquery
 -- finds ANY records in the OrderDetails table has Quantity equal to 10
@@ -410,7 +438,7 @@ WHERE ProductID = ALL
 
 -- Window Functions
 
--- patition - divide the data into groups within partitions, rather than across the entire dataset
+-- patition by - divide the data into groups within partitions, rather than across the entire dataset
 -- ORDER BY - sort the data within each partition
 
 -- window function - operate on a set of rows related to the current row
@@ -433,20 +461,22 @@ SELECT product_category, sales_amount,
 
 -- NTILE() - divides an ordered set of rows into a specified number of approximately equal groups
 SELECT product_category, sales_amount,
-       NTILE(4) OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS quartile
+       NTILE(4) OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS quartile -- divide the rows into 4 groups
   FROM sales;
 
 -- LAG(amount,1) - accesses data from a previous row in the same result set without the use of a self-join
+-- below query returns the previous sales_amount for each product_category
 SELECT product_category, sales_amount,
        LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
   FROM sales;
 
 -- LEAD() - accesses data from a subsequent row in the same result set without the use of a self-join
+-- below query returns the next sales_amount for each product_category
 SELECT product_category, sales_amount,
        LEAD(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS next_sales_amount
   FROM sales;
 
--- FIRST_VALUE() - returns the first value in an ordered set of values
+-- FIRST_VALUE() - returns the first value in an ordered set of values, equal to the value of the first row in the partition use row_number() = 1
 SELECT product_category, sales_amount,
        FIRST_VALUE(sales_amount) OVER (PARTITION BY product_category ORDER BY sales_amount) AS first_sales_amount
   FROM sales;
@@ -467,14 +497,18 @@ SELECT product_category, sales_amount,
   FROM sales;
 
 -- PERCENTILE_CONT() - calculates the value that corresponds to a specified percentile in a group of values
+-- below query calculates the median sales_amount for each product_category
 SELECT product_category, sales_amount,
        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;
 
--- PERCENTILE_DISC() - calculates the value that corresponds to a specified percentile in a group of values
+-- PERCENTILE_DISC() - calculates the value that corresponds to a specified percentile in a group of values, percentile means the value that divides the data into two parts
+-- below query calculates the median sales_amount for each product_category
 SELECT product_category, sales_amount,
        PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY sales_amount) OVER (PARTITION BY product_category) AS median_sales_amount
   FROM sales;
+-- PERCENTILE_CONT() vs PERCENTILE_DISC(), PERCENTILE_CONT() returns a value that falls between the values in the dataset, while PERCENTILE_DISC() returns a value from the dataset
+
 
 -- aggregate functions with window functions - get running aggregates
 SELECT product_category, sales_amount,
@@ -488,6 +522,7 @@ SELECT product_category, sales_amount,
 
 
 -- ROWS BETWEEN - specify a window frame within a partition of a result set
+-- below sum the sales for the current month and the previous month
 SELECT month, sales,
   SUM(sales) OVER (ORDER BY month ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS moving_sum
 FROM sales;
@@ -531,7 +566,7 @@ SELECT product_name, EXTRACT(YEAR FROM sales_date) AS sales_year
 
 -- DATE_PART() - extracts parts of a date or time value
 -- year, month, day, hour, minute, second, week, quarter
-SELECT product_name, DATE_PART('year', sales_date) AS sales_year
+SELECT product_name, DATE_PART('year', sales_date) AS sales_year -- extract the year from the sales_date, same as EXTRACT(YEAR FROM sales_date)
 
 -- TO_CHAR() - converts a date or time value to a string
 SELECT product_name, TO_CHAR(sales_date, 'YYYY-MM-DD') AS formatted_sales_date
@@ -565,6 +600,7 @@ SELECT DATEADD(hour, -2, '2024-05-27 10:00:00') AS new_datetime; -- get 2024-05-
 SELECT product_name, DATE_DIFF('2024-01-01', sales_date) AS days_since_sale
 
 -- DATE_TRUNC() - truncates a date or time value to a specified level of precision
+-- below code gets the first day of the month for each sale
 SELECT product_name, DATE_TRUNC('month', sales_date) AS first_day_of_month
 
 SELECT DATE_TRUNC('month', '2024-05-27 10:15:30'::timestamp) AS truncated_date; -- get 2024-05-01 00:00:00, truncate the timestamp '2024-05-27 10:15:30' to the start of the month
@@ -590,34 +626,7 @@ SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_
 -- Subquery - query within another query
 -- Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
 -- Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
-
-# DATE_TRUNC() - truncates a date or time value to a specified level of precision
-f'SELECT product_name, DATE_TRUNC('month', sales_date) AS first_day_of_month'
-
-f'''SELECT DATE_TRUNC('month', '2024-05-27 10:15:30'::timestamp) AS truncated_date;''' # get 2024-05-01 00:00:00, truncate the timestamp '2024-05-27 10:15:30' to the start of the month
-
-# DATE_FORMAT() - formats a date or time value
-f'SELECT product_name, DATE_FORMAT(sales_date, 'YYYY-MM-DD') AS formatted_sales_date'
-f'SELECT DATE_FORMAT('2024-05-27 10:15:30', '%Y-%m-%d %H:%i:%s') AS formatted_date;' # get 2024-05-27 10:15:30
-
-# STR_TO_DATE() - converts a string to a date or time value using a specified format
-f'SELECT product_name, STR_TO_DATE('2024-01-01', 'YYYY-MM-DD') AS formatted_date'
-
-# TIMESTAMPDIFF() - calculates the difference between two date or time values
-f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
-
-
-# TIMESTAMPADD() - adds a specified time interval to a date or time value
-f'SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day'
-
-# TIMESTAMPDIFF() - calculates the difference between two date or time values
-f'SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale'
-
-
-# -----------------Subquery-----------------
--- Subquery - query within another query
--- Subquery - can be used with SELECT, INSERT, UPDATE, DELETE statements
--- Can't use IS as  IS operator is used for comparing a value with NULL/ NOT NULL
+-- use subquery when results can't be directly obtained from the main query
 
 -- create new table for outer query
 SELECT employee_id, total_sales
@@ -686,13 +695,18 @@ FROM cte_name;
 
 -- string manipulation
 -- CONCAT() - concatenate two or more strings
-SELECT CONCAT(first_name, ' ', last_name) AS full_name
+SELECT CONCAT(first_name, ' ', last_name) AS full_name -- combine first_name and last_name into a single column
 
--- group_concat
-SELECT product_category, GROUP_CONCAT(product_name) AS products
+-- || - concatenate two or more strings
+SELECT first_name || ' ' || last_name AS full_name -- combine first_name and last_name into a single column
+
+-- group_concat, used to concatenate multiple values into a single string
+SELECT product_category, GROUP_CONCAT(product_name) AS products -- put all product names into one row
 FROM products
 
-SELECT product_category, S(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products -- order by product name in descending order and separate by comma, put all into one row
+SELECT product_category, GROUP_CONCAT(product_name ORDER BY product_name DESC SEPARATOR ', ') AS products -- order by product name in descending order and separate by comma, put all into one row
+
+-- concat vs group_concat: CONCAT() is used to concatenate two or more strings into a single string, while GROUP_CONCAT() is used to concatenate multiple values into a single string
 
 -- substring(), used to extract a substring from a string
 SELECT SUBSTRING(product_name, 1, 3) AS short_name -- get the first 3 characters of the product name, SUBSTRING(product_name, 1, 3) means start from the first character and get 3 characters
@@ -703,7 +717,7 @@ SELECT SUBSTRING(product_name, LENGTH(product_name) - 2, 3) AS short_name -- get
 -- or negative index
 SELECT SUBSTRING(product_name, -3) AS short_name -- get the last 3 characters of the product name
 
--- mid(), used to get a specified number of characters from a string starting at a specified position
+-- mid(), used to get a specified number of characters from a string starting at a specified position, MID(string, start, length), similar to SUBSTRING()
 SELECT MID(product_name, 4, 3) AS short_name -- get 3 characters starting from the 4th character of the product name
 
 -- ucase(), used to convert a string to uppercase
@@ -736,8 +750,10 @@ SELECT LOWER(product_name) AS lower_name -- convert the product name to lowercas
 SELECT LENGTH(product_name) AS name_length -- get the length of the product name
 
 -- locate(), used to find the position of a substring in a string
+-- LOCATE('substring', 'string') - find the position of 'substring' in 'string'
 SELECT LOCATE('substring', product_name) AS position -- find the position of 'substring' in the product name
-
+-- LOCATE('substring', 'string', start_position) - find the position of 'substring' in 'string' starting from the specified position
+SELECT LOCATE('substring', product_name, 5) AS position -- find the position of 'substring' in the product name starting from the 5th character
 
 -- pivot - rotate rows into columns
 -- firstly write a subquery to select the columns to pivot
@@ -803,7 +819,7 @@ SET @row_number:=0;
 SELECT @rownum1 := @rownum1 + 1 AS num1, name AS n1 
 FROM occupations, (SELECT @rownum1 := 0) r 
 WHERE occupation = 'Doctor' 
-ORDER BY name) AS t1
+ORDER BY name AS t1
 
 -- the above code is equivalent to the following code
 SELECT ROW_NUMBER() OVER (ORDER BY name) AS num1, name AS n1
@@ -997,12 +1013,18 @@ WHERE REGEXP_LIKE(product_name, '^A.*'); -- get product names that start with 'A
 
 -- REGEXP_REPLACE() - replaces a substring that matches a regular expression with another substring
 SELECT REGEXP_REPLACE(product_name, 'old_string', 'new_string') AS updated_name -- replace 'old_string' with 'new_string' in the product name
+-- e.g. remove all non-word characters from the product name
+SELECT REGEXP_REPLACE(product_name, '\W', '') AS updated_name -- remove all non-word characters from the product name
 
 -- REGEXP_INSTR() - returns the position of the first occurrence of a regular expression in a string
 SELECT REGEXP_INSTR(product_name, 'substring') AS position -- find the position of 'substring' in the product name
+-- e.g. find the position of the first digit in the product name
+SELECT REGEXP_INSTR(product_name, '\d') AS position -- find the position of the first digit in the product name
 
 -- REGEXP_SUBSTR() - returns a substring that matches a regular expression
 SELECT REGEXP_SUBSTR(product_name, 'substring') AS matched_substring -- find the substring that matches 'substring' in the product name
+-- e.g. find the first digit in the product name
+SELECT REGEXP_SUBSTR(product_name, '\d') AS matched_substring -- find the first digit in the product name
 
 
 
