@@ -63,6 +63,22 @@ OFFSET 5;
 
 -- the order of the clauses in a SQL query start with FROM, JOIN, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, and LIMIT/OFFSET
 
+-- SELECT with subquery, it allows the current column of the main query to be compared with the result of the subquery
+SELECT (select t2.name from table2 t2 where t2.id = t1.id), t1.name from table1 t1;
+
+-- different where clause conditions
+-- =, <>, !=, >, <, >=, <=, BETWEEN , LIKE, IN, IS NULL, IS NOT NULL, AND, OR, NOT
+where between 1 and 10
+where like 'a%' -- starts with a
+where like '%a' -- ends with a
+where like '%or%' -- contains or
+where in ('a', 'b', 'c')
+where is null
+where is not null
+where and
+where or
+where not
+
 -- aggregated function and group by
 -- when group by not needed - counting the number of rows in a table
 SELECT COUNT(*) FROM table_name;
@@ -70,6 +86,16 @@ SELECT COUNT(*) FROM table_name;
 SELECT category, COUNT(*) FROM table_name GROUP BY category;
 -- when group by needed - counting the number of rows in a table for each category and order by the count in descending order
 SELECT category, COUNT(*) FROM table_name GROUP BY category ORDER BY COUNT(*) DESC;
+
+-- aggregation function can be used in having clause
+SELECT category, COUNT(*) FROM table_name GROUP BY category HAVING COUNT(*) > 10;
+
+-- aggregation function can be used in having clause with self group by
+select category from table group by category having count(*) > (select count(*) from table group by category order by count(*) desc limit 1); -- get the category with the most rows
+
+-- using group by when no aggregation function is used
+-- group by is used to group rows that have the same values in a specified column or columns into summary rows
+SELECT category FROM table_name GROUP BY category; -- get the unique values in the category column
 
 -- remove zero in integer numbers
 SELECT TRIM(TRAILING '0' FROM column_name) FROM table_name; -- this removes trailing zeros from the column values, trailing means zeros at the end
@@ -131,7 +157,7 @@ SELECT uosCode, uosName
 
 -- conditional data aggregation
 
--- filter - straifhtforward condition, not widely used, CASE WHEN is more preferrable
+-- filter - straightforward condition, not widely used, CASE WHEN is more preferrable
 SUM(amount) FILTER (WHERE condition) -- sum of amount where condition is met
 
 SELECT
@@ -180,6 +206,17 @@ SELECT
     END AS name_category
 FROM
     employees;
+
+-- CASE WHEN can work in JOIN
+SELECT CASE WHEN EXISTS (SELECT 1 FROM table2 WHERE table2.column = table1.column) THEN 'Yes' ELSE 'No' END AS column_exists
+FROM table1;
+
+-- if
+-- IF(condition, value_if_true, value_if_false)
+SELECT product_name, unit_price,
+       IF(unit_price > 100, 'Expensive', 'Affordable') AS price_category
+
+-- if vs case when: IF is used to return a value based on a condition, while CASE WHEN is used to return a value based on multiple conditions.
 
 
 -- select into - create a new table from an existing table
@@ -390,6 +427,15 @@ UNION ALL
 SELECT column_name(s)
 FROM table2;
 
+-- union all can be used in CTE
+WITH cte_name AS (
+  SELECT column_name(s)
+  FROM table1
+  UNION ALL
+  SELECT column_name(s)
+  FROM table2
+)
+
 -- UNION ALL is faster than UNION as it does not remove duplicates
 -- UNION ALL is used when you want to include all rows from multiple SELECT statements
 -- UNION is used when you want to remove duplicate rows from the result set
@@ -446,17 +492,22 @@ WHERE ProductID = ALL
 
 -- no need to be included in the GROUP BY clause as it operates on the result set after the GROUP BY clause has been applied
 
+-- in a cte or subquery, window functions can be used to calculate running totals, moving averages, and other aggregations, but can't be used with GROUP BY or HAVING or where clause
+
 -- ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
+-- use this if we want to find top N rows in each group
 SELECT product_category, sales_amount,
        ROW_NUMBER() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;
 
 -- RANK() - assigns a unique integer to each distinct row within the partition of a result set, skipping the next integer if there is a tie
+-- use this if we want to find top N distinct rows in each group, if there are ties, the next rank will be skipped
 SELECT product_category, sales_amount,
        RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;
 
 -- DENSE_RANK() - assigns a unique integer to each distinct row within the partition of a result set, without gaps
+-- use this if we want to find top N distinct rows in each group, if there are ties, the next rank will not be skipped
 SELECT product_category, sales_amount,
        DENSE_RANK() OVER (PARTITION BY product_category ORDER BY sales_amount DESC) AS rank
   FROM sales;
@@ -471,6 +522,7 @@ SELECT product_category, sales_amount,
 SELECT product_category, sales_amount,
        LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
   FROM sales;
+
 
 -- LEAD() - accesses data from a subsequent row in the same result set without the use of a self-join
 -- below query returns the next sales_amount for each product_category
@@ -518,6 +570,8 @@ SELECT product_category, sales_amount,
   FROM sales; -- running total of sales_amount within each product_category
 
 -- avg - moving average of a specified number of previous rows.
+-- calculating a percentage can be done using sum(case when condition then 1 else 0 end) / count(*) or avg(case when condition then 1 else 0 end)
+
 -- count - cumulative count of rows up to the current row.
 -- max - maximum value of a specified number of previous rows.
 -- min - minimum value of a specified number of previous rows.
@@ -589,21 +643,34 @@ select product from sales where sales_date > current_date - interval '20 days';
 
 -- CURRENT_DATE - returns the current date
 SELECT product_name, CURRENT_DATE AS current_date
+-- current_date is equivalent to now()::date, only returns the current date
+-- add or subtract interval to current_date to get the date in the future or past
+SELECT product_name, CURRENT_DATE + INTERVAL '1 month' AS next_month
 
 -- CURRENT_TIME - returns the current time
 SELECT product_name, CURRENT_TIME AS current_time
+-- current_time is equivalent to now()::time, only returns the current time
+-- add or subtract interval to current_time to get the time in the future or past
+SELECT product_name, CURRENT_TIME + INTERVAL '1 hour' AS next_hour
 
 -- CURRENT_TIMESTAMP - returns the current date and time
 SELECT product_name, CURRENT_TIMESTAMP AS current_timestamp
+-- current_timestamp is equivalent to now(), both return the current date and time. 
+-- add or subtract interval to current_timestamp to get the date and time in the future or past
+SELECT product_name, CURRENT_TIMESTAMP + INTERVAL '1 day' AS next_day
 
 -- NOW() - returns the current date and time
 SELECT product_name, NOW() AS current_date_time
+-- current_date_time is equivalent to current_timestamp, both return the current date and time.
+-- add or subtract interval to current_date_time to get the date and time in the future or past
+SELECT product_name, NOW() + INTERVAL '1 hour' AS next_hour
+SELECT product_name, NOW() - INTERVAL '1 day' AS previous_day
 
 -- DATE_ADD() - adds a specified time interval to a date or time value
 SELECT product_name, DATE_ADD(sales_date, INTERVAL 1 DAY) AS next_day
 SELECT DATEADD(month, 1, '2024-05-27') AS new_date; -- get 2024-06-27
 SELECT DATEADD(hour, -2, '2024-05-27 10:00:00') AS new_datetime; -- get 2024-05-27 08:00:00
-
+-- DATEADD() Equivalent to DATE_ADD() in MySQL, equivalent to INTERVAL in PostgreSQL
 
 -- DATE_DIFF() - calculates the difference between two date or time values
 SELECT product_name, DATE_DIFF('2024-01-01', sales_date) AS days_since_sale
@@ -730,6 +797,7 @@ SELECT SUBSTRING(product_name, -3) AS short_name -- get the last 3 characters of
 SELECT MID(product_name, 4, 3) AS short_name -- get 3 characters starting from the 4th character of the product name
 
 -- ucase(), used to convert a string to uppercase
+-- ucase() and lcase() are equivalent to upper() and lower() and more efficient
 
 -- left(), used to get a specified number of characters from the left of a string
 SELECT LEFT(product_name, 3) AS short_name -- get the first 3 characters of the product name
@@ -763,6 +831,9 @@ SELECT LENGTH(product_name) AS name_length -- get the length of the product name
 SELECT LOCATE('substring', product_name) AS position -- find the position of 'substring' in the product name
 -- LOCATE('substring', 'string', start_position) - find the position of 'substring' in 'string' starting from the specified position
 SELECT LOCATE('substring', product_name, 5) AS position -- find the position of 'substring' in the product name starting from the 5th character
+
+-- create customised category
+select 'Low Price' as category, product_name, price from products where price < 100 -- this will create a new column category with value 'Low Price' and the product name and price
 
 -- pivot - rotate rows into columns
 -- firstly write a subquery to select the columns to pivot
@@ -842,6 +913,14 @@ SELECT 10 + 5 AS sum -- get 15
 SELECT 10 - 5 AS difference -- get 5
 SELECT 10 * 5 AS product -- get 50
 SELECT 10 / 5 AS quotient -- get 2
+
+-- percentage calculation using integer division
+-- it's good practice to multiply one of the numbers by 1.0 to get a decimal result
+SELECT 1.0 * 10 / 5 AS percentage -- get 2.0
+
+-- or use cast
+SELECT CAST(10 AS DECIMAL) / 5 AS percentage -- get 2.0
+
 
 -- % - modulo operator, returns the remainder of a division operation
 SELECT 10 % 3 AS remainder -- get 1
@@ -957,6 +1036,8 @@ SELECT product_name FROM products WHERE product_name RLIKE 'A.'; -- get product 
 
 -- * - matches zero or more occurrences of the preceding character
 SELECT product_name FROM products WHERE product_name RLIKE 'A.*'; -- get product names that have 'A' followed by zero or more characters
+-- * is a greedy quantifier, it matches as many characters as possible
+SELECT product_name FROM products WHERE product_name RLIKE '[A-Z]*'; -- get product names that have zero or more uppercase letters
 
 -- + - matches one or more occurrences of the preceding character
 SELECT product_name FROM products WHERE product_name RLIKE 'A+'; -- get product names that have 'A' followed by one or more characters
@@ -975,6 +1056,10 @@ SELECT product_name FROM products WHERE product_name RLIKE 'A{2,4}'; -- get prod
 
 -- \ - escapes a special character
 SELECT product_name FROM products WHERE product_name RLIKE 'A\.'; -- get product names that have 'A.'
+
+-- \\ - used to escape a backslash
+-- \\. - matches a period, example: '.' (period)
+-- \\@ - matches an at sign, example: '@' (at sign)
 
 -- \d - matches any digit, example: [0-9]
 SELECT product_name FROM products WHERE product_name RLIKE '\d'; -- get product names that have any digit
@@ -1035,6 +1120,31 @@ SELECT REGEXP_SUBSTR(product_name, 'substring') AS matched_substring -- find the
 -- e.g. find the first digit in the product name
 SELECT REGEXP_SUBSTR(product_name, '\d') AS matched_substring -- find the first digit in the product name
 
+
+-- handling different data structures in SQL
+
+-- JSON - JavaScript Object Notation, used to store and exchange data
+-- JSON data type - stores JSON data in a column, introduced in MySQL 5.7 and PostgreSQL 9.2
+-- read json data
+SELECT column_name->'$.key' AS column_name
+FROM table_name;
+
+-- read json data in postgresql
+SELECT column_name->'key' AS column_name
+
+-- write json data
+SELECT JSON_OBJECT('key1', 'value1', 'key2', 'value2') AS column_name;
+
+-- unpack json data
+SELECT column_name->'key' AS column_name
+FROM table_name;
+
+-- array - a collection of elements, each element can be of a different data type
+-- ARRAY - used to store an array in a column, introduced in PostgreSQL 9.3
+-- read array data
+SELECT column_name[index] AS column_name
+FROM table_name;
+
 -- flattern arrays in SQL
 -- UNNEST() - used to flatten an array into rows
 SELECT UNNEST(array_column) AS column_name
@@ -1051,4 +1161,34 @@ FROM table_name;
 -- ARRAY_AGG() - used to aggregate values into an array
 SELECT column_name, ARRAY_AGG(array_column) AS column_name
 FROM table_name
+
+-- XML - Extensible Markup Language, used to store and exchange data
+-- XML data type - stores XML data in a column, introduced in SQL Server 2005
+-- read xml data
+SELECT column_name.value('(/key)[1]', 'data_type') AS column_name
+FROM table_name;
+
+-- write xml data
+SELECT CAST('<key>value</key>' AS XML) AS column_name;
+
+-- unpack xml data
+SELECT column_name.value('(/key)[1]', 'data_type') AS column_name
+
+-- XMLTABLE() - used to flatten XML data into rows
+SELECT column_name
+FROM XMLTABLE('/key' PASSING column_name COLUMNS column_name data_type) AS table_name;
+
+-- XMLQUERY() - used to flatten XML data into rows
+SELECT column_name
+FROM XMLQUERY('/key' PASSING column_name RETURNING CONTENT) AS table_name;
+
+-- XMLNAMESPACES() - used to define namespaces in XML data
+SELECT column_name
+FROM XMLNAMESPACES('namespace' AS alias) SELECT column_name;
+
+-- XMLFOREST() - used to create an XML element from a list of values
+SELECT XMLFOREST(column_name AS 'key') AS column_name;
+
+-- XMLCONCAT() - used to concatenate XML elements
+SELECT XMLCONCAT(column_name) AS column_name;
 
