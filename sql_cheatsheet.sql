@@ -1,5 +1,21 @@
 -- SQL character index starts from 1
 
+-- data types in SQL
+char - fixed length string, max length 255
+varchar - variable length string, max length 65535
+text - variable length string, max length 65535
+int - integer, 4 bytes, -2147483648 to 2147483647
+bigint - integer, 8 bytes, -9223372036854775808 to 9223372036854775807
+float - floating-point number, 4 bytes, 1.175494351E-38 to 3.402823466E+38
+double - double-precision floating-point number, 8 bytes, 2.2250738585072014E-308 to 1.7976931348623157E+308
+date: 2024-05-27
+time: 10:15:30
+datetime: 2024-05-27 10:15:30
+timestamp: 2024-05-27 10:15:30
+boolean: true or false
+binary: binary data, max length 65535
+varbinary: variable length binary data, max length 65535
+
 -- case sensitivity
 -- keywords and commands are case-insensitive
 -- data and operators can be case-sensitive
@@ -98,7 +114,10 @@ select category from table group by category having count(*) > (select count(*) 
 SELECT category FROM table_name GROUP BY category; -- get the unique values in the category column
 
 -- remove zero in integer numbers
+-- trim() function can be used to remove leading and trailing zeros from a number
 SELECT TRIM(TRAILING '0' FROM column_name) FROM table_name; -- this removes trailing zeros from the column values, trailing means zeros at the end
+SELECT TRIM(LEADING '0' FROM column_name) FROM table_name; -- this removes leading zeros from the column values, leading means zeros at the start
+select trim('0' from column_name) from table_name; -- this removes all leading and trailing zeros from the column values
 
 -- REMOVE zeros using replace
 SELECT REPLACE(column_name, '0', '') FROM table_name; -- this removes '0' from the column values
@@ -218,6 +237,10 @@ SELECT product_name, unit_price,
 
 -- if vs case when: IF is used to return a value based on a condition, while CASE WHEN is used to return a value based on multiple conditions.
 
+-- iif() - returns one value if a condition is true and another value if the condition is false
+SELECT IIF(sales > 1000, 'High', 'Low') AS sales_category -- return 'High' if sales is greater than 1000, otherwise return 'Low'
+
+-- iif vs if: IIF() is a shorthand for the CASE statement, it is more concise and easier to read than the CASE statement
 
 -- select into - create a new table from an existing table
 -- copies only the German customers into a new table
@@ -358,6 +381,14 @@ WHERE column_name NOT IN
 (SELECT column_name
 FROM table2);
 
+-- or use NOT EXISTS
+SELECT column_name(s)
+FROM table1
+WHERE NOT EXISTS
+(SELECT column_name
+FROM table2
+WHERE table1.column_name = table2.column_name);
+
 
 -- Create view
 CREATE VIEW view_name AS
@@ -464,6 +495,9 @@ SELECT SupplierName
 from Suppliers
 WHERE NOT EXISTS (SELECT ProductName FROM Products WHERE Products.SupplierID = Suppliers.supplierID AND Price > 100000);
 
+-- EXISTS vs IN: EXISTS is used to check for the existence of rows in a subquery, while IN is used to compare a value to a list of values returned by a subquery.
+-- exists is faster than in as it returns true as soon as it finds a match, while in returns all the matchese before returning true
+
 -- ANY - to compare a value to any value in a list or returned by a subquery
 -- finds ANY records in the OrderDetails table has Quantity equal to 10
 SELECT ProductName
@@ -493,6 +527,7 @@ WHERE ProductID = ALL
 -- no need to be included in the GROUP BY clause as it operates on the result set after the GROUP BY clause has been applied
 
 -- in a cte or subquery, window functions can be used to calculate running totals, moving averages, and other aggregations, but can't be used with GROUP BY or HAVING or where clause
+-- this means if I get rank_Num in a cte, I can't directly use where rank_Num = 1 in cte, I need to use it in the outer query. Because window functions are applied after the GROUP BY clause.
 
 -- ROW_NUMBER() - assigns a unique sequential integer to each row within a partition of a result set
 -- use this if we want to find top N rows in each group
@@ -522,7 +557,6 @@ SELECT product_category, sales_amount,
 SELECT product_category, sales_amount,
        LAG(sales_amount, 1) OVER (PARTITION BY product_category ORDER BY sales_amount) AS prev_sales_amount
   FROM sales;
-
 
 -- LEAD() - accesses data from a subsequent row in the same result set without the use of a self-join
 -- below query returns the next sales_amount for each product_category
@@ -598,10 +632,20 @@ SELECT month, sales,
        SUM(sales) OVER (ORDER BY month ROWS BETWEEN CURRENT ROW AND CURRENT ROW) AS current_row_sales
 FROM sales;
 
+-- unbouded following - from the current row to the last row
+SELECT month, sales, 
+       SUM(sales) OVER (ORDER BY month ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING) AS moving_sum_following
+FROM sales;
+
 -- n following - the n-th row after the current row
 SELECT month, sales, 
        SUM(sales) OVER (ORDER BY month ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) AS moving_sum_following
 FROM sales;
+
+-- range between - specify a window frame within a partition of a result set based on the values of the rows
+-- below sum the sales for the current month and the previous month
+SELECT month, sales,
+  SUM(sales) OVER (ORDER BY month RANGE BETWEEN INTERVAL 1 MONTH PRECEDING AND INTERVAL 1 MONTH FOLLOWING) AS moving_sum
 
 -- round
 SELECT product_name, ROUND(price, 2) AS rounded_price
@@ -694,9 +738,32 @@ SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_
 -- TIMESTAMPADD() - adds a specified time interval to a date or time value
 SELECT product_name, TIMESTAMPADD(DAY, 1, sales_date) AS next_day
 
--- TIMESTAMPDIFF() - calculates the difference between two date or time values
-SELECT product_name, TIMESTAMPDIFF(DAY, '2024-01-01', sales_date) AS days_since_sale
+-- darefromparts - create a date from year, month, and day
+SELECT DATEFROMPARTS(2024, 5, 27) AS new_date; -- get 2024-05-27
 
+-- datename - get the name of the month, day, or weekday from a date
+SELECT DATENAME(month, '2024-05-27') AS month_name; -- get May
+
+-- datepart - get the part of a date, such as the year, month, day, or weekday, similar to EXTRACT() and DATE_PART()
+SELECT DATEPART(year, '2024-05-27') AS year; -- get 2024
+
+-- DAY() - extracts the day of the month from a date or time value
+SELECT product_name, DAY(sales_date) AS day_of_month
+
+-- MONTH() - extracts the month from a date or time value
+SELECT product_name, MONTH(sales_date) AS month -- same as EXTRACT(MONTH FROM sales_date)
+
+-- YEAR() - extracts the year from a date or time value
+SELECT product_name, YEAR(sales_date) AS year
+
+-- GETDATE() - returns the current date and time
+SELECT product_name, GETDATE() AS current_date_time
+
+-- GETUTCDATE() - returns the current UTC date and time
+SELECT product_name, GETUTCDATE() AS current_utc_date_time
+
+-- SYSDATETIME() - returns the current date and time
+SELECT product_name, SYSDATETIME() AS current_date_time
 
 -----------------Subquery-----------------
 -- Subquery - query within another query
@@ -723,7 +790,7 @@ SELECT column_name(s)
 FROM table_name 
 WHERE column_name IN (SELECT column_name(s) FROM table_name WHERE condition);
 
--- subquery within select
+-- subquery within select, independent subquery from the main query
 SELECT column_name, (SELECT column_name FROM table_name WHERE condition) AS subquery_column
 
 -- subquery directly used in join
@@ -776,6 +843,12 @@ SELECT CONCAT(first_name, ' ', last_name) AS full_name -- combine first_name and
 -- || - concatenate two or more strings
 SELECT first_name || ' ' || last_name AS full_name -- combine first_name and last_name into a single column
 
+-- CONCAT_WS(), used to concatenate multiple strings with a separator
+SELECT CONCAT_WS(' ', first_name, last_name) AS full_name -- combine first_name and last_name into a single column separated by a space
+
+-- CONCAT with + - concatenate two or more strings
+SELECT first_name + ' ' + last_name AS full_name -- combine first_name and last_name into a single column
+
 -- group_concat, used to concatenate multiple values into a single string
 SELECT product_category, GROUP_CONCAT(product_name) AS products -- put all product names into one row
 FROM products
@@ -792,6 +865,9 @@ SELECT SUBSTRING(product_name, LENGTH(product_name) - 2, 3) AS short_name -- get
 
 -- or negative index
 SELECT SUBSTRING(product_name, -3) AS short_name -- get the last 3 characters of the product name
+
+-- find character in the middle of a variable length string
+SELECT SUBSTRING(product_name, LENGTH(product_name) / 2, 1) AS middle_character -- get the middle character of the product name
 
 -- mid(), used to get a specified number of characters from a string starting at a specified position, MID(string, start, length), similar to SUBSTRING()
 SELECT MID(product_name, 4, 3) AS short_name -- get 3 characters starting from the 4th character of the product name
@@ -817,6 +893,8 @@ SELECT LTRIM(product_name) AS trimmed_name -- remove leading spaces from the pro
 -- rtrim(), used to remove trailing spaces from a string
 SELECT RTRIM(product_name) AS trimmed_name -- remove trailing spaces from the product name
 
+-- trim() is equivalent to ltrim() and rtrim() combined, but more efficient
+
 -- upper(), used to convert a string to uppercase
 SELECT UPPER(product_name) AS upper_name -- convert the product name to uppercase
 
@@ -831,6 +909,58 @@ SELECT LENGTH(product_name) AS name_length -- get the length of the product name
 SELECT LOCATE('substring', product_name) AS position -- find the position of 'substring' in the product name
 -- LOCATE('substring', 'string', start_position) - find the position of 'substring' in 'string' starting from the specified position
 SELECT LOCATE('substring', product_name, 5) AS position -- find the position of 'substring' in the product name starting from the 5th character
+
+-- ASCII(), used to get the ASCII value of a character
+SELECT ASCII('A') AS ascii_value -- get the ASCII value of 'A'
+
+-- CHAR(), used to get the character from an ASCII value
+SELECT CHAR(65) AS character -- get the character with ASCII value 65
+
+-- CHARINDEX(), used to find the position of a substring in a string
+SELECT CHARINDEX('substring', product_name) AS position -- find the position of 'substring' in the product name
+
+-- datalength(), used to get the length of a string in bytes
+SELECT DATALENGTH(product_name) AS name_length -- get the length of the product name in bytes
+
+-- difference(), used to compare the difference between two strings
+SELECT DIFFERENCE('string1', 'string2') AS difference -- compare the difference between 'string1' and 'string2'
+
+-- format(), used to format a number with a specific format
+SELECT FORMAT(123456.789, 'C', 'en-US') AS formatted_number -- format the number 123456.789 as currency in US English
+
+-- len(), used to get the length of a string
+SELECT LEN(product_name) AS name_length -- get the length of the product name
+
+-- nchar(), used to get the Unicode character with the specified integer code
+SELECT NCHAR(65) AS character -- get the Unicode character with ASCII value 65
+
+-- patindex(), used to find the position of a pattern in a string
+SELECT PATINDEX('%substring%', product_name) AS position -- find the position of 'substring' in the product name
+
+-- quote_name(), used to quote an identifier
+SELECT QUOTENAME('column_name') AS quoted_name -- quote the column name
+
+-- replicate(), used to repeat a string a specified number of times
+SELECT REPLICATE('string', 3) AS repeated_string -- repeat 'string' 3 times
+
+-- reverse(), used to reverse a string
+SELECT REVERSE(product_name) AS reversed_name -- reverse the product name
+
+-- soundex(), used to get the soundex value of a string, soundex value is a phonetic algorithm that represents the sound of a word
+SELECT SOUNDEX(product_name) AS soundex_value -- get the soundex value of the product name
+
+-- space(), used to insert a specified number of spaces into a string
+SELECT SPACE(3) AS spaces -- insert 3 spaces
+
+-- stuff(), used to replace a specified number of characters in a string with another string
+SELECT STUFF(product_name, 3, 5, 'new_string') AS updated_name -- replace 5 characters starting from the 3rd character with 'new_string' in the product name
+
+-- translate(), used to replace multiple characters in a string with other characters
+SELECT TRANSLATE(product_name, 'abc', '123') AS translated_name -- replace 'a' with '1', 'b' with '2', and 'c' with '3' in the product name
+
+-- unicode(), used to get the Unicode value of the first character in a string
+SELECT UNICODE(product_name) AS unicode_value -- get the Unicode value of the first character in the product name
+
 
 -- create customised category
 select 'Low Price' as category, product_name, price from products where price < 100 -- this will create a new column category with value 'Low Price' and the product name and price
@@ -1009,6 +1139,8 @@ SELECT DEGREES(0) AS degrees_value -- get 0
 -- RADIANS() - converts degrees to radians
 SELECT RADIANS(0) AS radians_value -- get 0
 
+-- isnumeric() - checks if a value is numeric
+SELECT ISNUMERIC('123') AS is_numeric -- get 1
 
 -- regular espression
 -- RLIKE - checks if a string matches a regular expression, RLIKE is case-insensitive
@@ -1112,6 +1244,7 @@ SELECT REGEXP_REPLACE(product_name, '\W', '') AS updated_name -- remove all non-
 
 -- REGEXP_INSTR() - returns the position of the first occurrence of a regular expression in a string
 SELECT REGEXP_INSTR(product_name, 'substring') AS position -- find the position of 'substring' in the product name
+
 -- e.g. find the position of the first digit in the product name
 SELECT REGEXP_INSTR(product_name, '\d') AS position -- find the position of the first digit in the product name
 
@@ -1136,8 +1269,11 @@ SELECT column_name->'key' AS column_name
 SELECT JSON_OBJECT('key1', 'value1', 'key2', 'value2') AS column_name;
 
 -- unpack json data
-SELECT column_name->'key' AS column_name
+SELECT column_name->'key' AS column_name -- this will create a new column column_name with the value of the key in the JSON data
 FROM table_name;
+
+-- unpack json data to rows
+SELECT column_name->'key' AS column_name
 
 -- array - a collection of elements, each element can be of a different data type
 -- ARRAY - used to store an array in a column, introduced in PostgreSQL 9.3
@@ -1191,4 +1327,43 @@ SELECT XMLFOREST(column_name AS 'key') AS column_name;
 
 -- XMLCONCAT() - used to concatenate XML elements
 SELECT XMLCONCAT(column_name) AS column_name;
+
+-- index - used to improve the performance of queries by reducing the time it takes to retrieve data
+-- CREATE INDEX - used to create an index on a table
+-- create INDEX I for column ID in table T
+CREATE INDEX I ON T (ID);
+
+-- UNIQUE INDEX - used to ensure that all values in a column are unique
+CREATE UNIQUE INDEX index_name
+
+-- INDEXES - used to create multiple indexes on a table
+CREATE INDEX index_name1, index_name2
+
+-- below code shows how to query table using index. assuming column ID is indexed with index I
+-- this will be faster than a normal
+SELECT * FROM T WHERE ID = 1; -- we don't need to specify the index name, the database will automatically use the index. We just need to specify the column name and the value to search for.
+
+-- DROP INDEX - used to drop an index from a table
+DROP INDEX index_name;
+
+-- convert() - converts a value to a specified data type
+SELECT CONVERT(int, 20.45) AS column_name
+
+-- current_user - returns the current user
+SELECT current_user AS user_name
+
+-- session_user - returns the current user
+SELECT session_user AS user_name
+
+-- user - returns the current user
+SELECT user AS user_name
+
+-- sessionproperty() - returns the value of a session property
+SELECT sessionproperty('property_name') AS property_value
+
+-- system_user - returns the current user
+SELECT system_user AS user_name
+
+-- user_name() - returns the current user
+SELECT user_name() AS user_name
 
