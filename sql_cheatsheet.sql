@@ -50,6 +50,8 @@ SELECT COALESCE(column_name, 'default_value') FROM table_name; -- Replaces NULL 
 -- NULLIF(expression1, expression2) - Returns NULL if expression1 equals expression2; otherwise, it returns expression1
 SELECT NULLIF(column1, column2) FROM table_name; -- If column1 equals column2, the result is NULL. Otherwise, it returns the value of column1.
 
+-- NULLIF(col1, 0) - returns NULL if col1 is 0, otherwise returns col1
+
 -- primary key
 -- unique identifier for each table row
 
